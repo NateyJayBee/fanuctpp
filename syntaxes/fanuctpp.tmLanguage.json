@@ -1,0 +1,80 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Fanuc Teach Pendant Programming",
+	"scopeName": "source.fanuctpp",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#constants"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.remark.fanuctpp",
+					"match": "(?<=:\\s+)(!.*)"
+				},
+				{
+					"name": "keyword.comment.fanuctpp",
+					"match": "//(.*)$"
+				},
+				{
+					"name": "keyword.control.fanuctpp",
+					"match": "\\b(JMP|LBL|CALL|IF|THEN|ELSE|ENDIF|END|WAIT|SKIP|CONDITION|J|L|C|AND|OR|TIMEOUT|SELECT|RUN|LOCK|UNLOCK|PREG|ABORT|PAUSE)\\b"
+				},
+				{
+					"name": "keyword.movetype.fanuctpp",
+					"match": "(\\bCNT\\d+|\\bFINE)"
+				},
+				{
+					"name": "keyword.on.fanuctpp",
+					"match": "\\b(ON)\\b"
+				},
+				{
+					"name": "keyword.off.fanuctpp",
+					"match": "\\b(OFF)\\b"
+				},
+				{
+					"name": "keyword.headerspace.fanuctpp",
+					"begin": "/PROG",
+					"end": "/MN"
+				},
+				{
+					"name": "keyword.header.fanuctpp",
+					"match": "(\\b|\\/)(PROG|ATTR|APPL|MN|POS|END|Macro|MNEDITOR|DATE|TIME|READ|READ_WRITE|OWNER|COMMENT|PROG_SIZE|CREATE|MODIFIED|FILE_NAME|VERSION|LINE_COUNT|MEMORY_SIZE|PROTECT|TCD|STACK_SIZE|TASK_PRIORITY|TIME_SLICE|BUSY_LAMP_OFF|ABORT_REQUEST|PAUSE_REQUEST|DEFAULT_GROUP|CONTROL_CODE|LOCAL_REGISTERS)(\\b|\\.)"
+				},
+				{
+					"name": "keyword.operator.fanuctpp",
+					"match": "(\\+|\\-|\\<|\\=|\\>|\\!|\\%)"
+				},
+				{
+					"name": "keyword.label.fanuctpp",
+					"match": "(?<=\\[\\d+:)(.*?)(?=\\])"
+				},
+				{
+					"name": "keyword.variable.fanuctpp",
+					"match": "\\$\\w+"
+				}
+			]
+		},
+		"constants": {
+			"patterns": [					
+				{
+					"name": "constant.numeric.fanuctpp",
+					"match": "\\b\\d+\\.?\\d*\\b"
+				},				
+				{
+					"name": "constant.language.fanuctpp",
+					"match": "\\b(UTOOL_NUM|UFRAME_NUM|UTOOL|UFRAME|OVERRIDE|RSR|UALM|PAYLOAD|TIMER|DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|PR|UF|UT|CONFIG|X|Y|Z|W|P|R)\\b"
+				},
+				{
+					"name": "constant.newline.fanuctpp",
+					"match": "^\\s*\\d{1,4}:"
+				}
+			]
+		}
+	}
+}
