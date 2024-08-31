@@ -1,4 +1,14 @@
 .vscode/**
 .vscode-test/**
-.gitignore
-vsc-extension-quickstart.md
+# Ignore the .vscode directory
+.vscode/
+
+# Ignore specific files
+config.json
+secret.txt
+
+# Ignore all log files
+*.log
+
+# Ignore node_modules directory
+node_modules/
