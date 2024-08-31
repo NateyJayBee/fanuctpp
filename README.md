@@ -1,6 +1,6 @@
 # fanuctpp README
 
-This is the README for your extension "fanuctpp". This extension includes themed sytax for Fanuc (.ls and soon .kl) files, and minor text editor functionality.
+This extension includes themed syntax for Fanuc (.ls and soon .kl) files, and minor text editor functionality.
 
 ## Features
 
