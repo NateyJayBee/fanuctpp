@@ -1,65 +1,52 @@
 # fanuctpp README
 
-This is the README for your extension "fanuctpp". After writing up a brief description, we recommend including the following sections.
+This is the README for your extension "fanuctpp". This extension includes themed sytax for Fanuc (.ls and soon .kl) files, and minor text editor functionality.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Themed syntax for (.ls) files. Each of the following syntaxes has its own coloring theme:
+- Remarks with (!)
+- Remarks with (//)
+- Control keywords:
+    - JMP, LBL, CALL, IF, THEN, ELSE, ENDIF, END, WAIT, SKIP, CONDITION, J, L, C, AND, OR, TIMEOUT, SELECT, RUN, LOCK, UNLOCK, PREG, ABORT, PAUSE
+- Constant language keywords:
+    - UTOOL_NUM, UFRAME_NUM, UTOOL, UFRAME, OVERRIDE, RSR, UALM, PAYLOAD, TIMER, DI, DO, GI, GO, RI, RO, UI, UO, SI, SO, SPI, SPO, SSI, SSO, CSI, CSO, AR, SR, GO, F, M, PR, UF, UT, CONFIG, X, Y, Z, W, P, R
+- Move types:
+    - CNT, FINE
+- I/O signals:
+    - ON, OFF
+- Header section:
+    - /PROG through /MN, /POS, /END
+- Operators:
+    - +, -, <, >, =, !, %
+- Labels:
+    - R[123:My label here]
+    - PR[123:My label here]
+- System Variables:
+    - $strings $that $begin $with $a $
+- Any Numbers outside of the header
+- TP line numbers
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+Basic event handler to detect when a new (.ls) file is opened and when changes are made
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+None.
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+None
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+None
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
+Fanuctpp pre-release 0.0.1
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+Pre Release:
+    Created extension with themed syntax for (.ls) files
+    Created first version of event handling for document changes
 
 **Enjoy!**
