@@ -1,7 +1,6 @@
-.vscode/**
-.vscode-test/**
 # Ignore the .vscode directory
 .vscode/
+.vscode
 
 # Ignore specific files
 config.json
