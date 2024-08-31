@@ -23,8 +23,7 @@
     "eslint": "^8.57.0",
     "typescript": "^5.5.4"
   },
-  "activationEvents": [
-  ],
+  "activationEvents": [],
   "engines": {
     "vscode": "^1.92.0"
   },
