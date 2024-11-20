@@ -1,0 +1,109 @@
+{
+    "name": "Fanuc LS Theme",
+    "type": "vs-dark",
+    "colors": {
+      "editor.foreground": "#ffffff",
+      "editor.background": "#1e1e1e"
+    },
+    "tokenColors": [
+      {
+        "scope": "keyword.control.fanuctp_ls",
+        "settings": {
+          "foreground": "#FF8040"
+        }
+      },
+      {
+        "scope": "keyword.remark.fanuctp_ls",
+        "settings": {
+          "foreground": "#FF5151",
+          "background": "#fff2cc"
+        }
+      },
+      {
+        "scope": "keyword.comment.fanuctp_ls",
+        "settings": {
+          "foreground": "#4CAF50",
+          "background": "#fff2cc"
+        }
+      },
+      {
+        "scope": "keyword.headerspace.fanuctp_ls",
+        "settings": {
+          "foreground": "#DCDCCC"
+        }
+      },
+      {
+        "scope": "keyword.header.fanuctp_ls",
+        "settings": {
+          "foreground": "#DCDCCC"
+        }
+      },
+      {
+        "scope": "keyword.on.fanuctp_ls",
+        "settings": {
+          "foreground": "#00FF00"
+        }
+      },
+      {
+        "scope": "keyword.off.fanuctp_ls",
+        "settings": {
+          "foreground": "#ff0000"
+        }
+      },
+      {
+        "scope": "keyword.operator.fanuctp_ls",
+        "settings": {
+          "foreground": "#E3CEAB"
+        }
+      },
+      {
+        "scope": "keyword.variable.fanuctp_ls",
+        "settings": {
+          "foreground": "#E3CEAB"
+        }
+      },
+      {
+        "scope": "keyword.movetype.fanuctp_ls",
+        "settings": {
+          "foreground": "#57f8ff"
+        }
+      },
+      {
+        "scope": "keyword.label.fanuctp_ls",
+        "settings": {
+          "foreground": "#ffffff"
+        }
+      },
+      {
+        "scope": "constant.numeric.fanuctp_ls",
+        "settings": {
+          "foreground": "#57f8ff"
+        }
+      },
+      {
+        "scope": "constant.language.fanuctp_ls",
+        "settings": {
+          "foreground": "#ffff2c"
+        }
+      },
+      {
+        "scope": "constant.newline.fanuctp_ls",
+        "settings": {
+            "foreground": "#999999"
+        }
+      },
+      {
+        "scope": "string.single_quote.fanuctp_ls",
+        "settings": {
+            "foreground": "#ffff80"
+        }
+      },
+      {
+        "scope": "string.double_quote.fanuctp_ls",
+        "settings": {
+            "foreground": "#ffff80"
+        }
+      }
+    ]
+  }
+  

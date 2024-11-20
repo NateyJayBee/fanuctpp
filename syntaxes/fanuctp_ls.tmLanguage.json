@@ -1,61 +1,64 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Fanuc Teach Pendant Programming",
-	"scopeName": "source.fanuctpp",
+	"scopeName": "source.fanuctp_ls",
 	"patterns": [
 		{
 			"include": "#keywords"
 		},
 		{
 			"include": "#constants"
+		},
+		{
+			"include": "#strings"
 		}
 	],
 	"repository": {
 		"keywords": {
 			"patterns": [
 				{
-					"name": "keyword.remark.fanuctpp",
-					"match": "(?<=:\\s+)(!.*)"
+					"name": "keyword.remark.fanuctp_ls",
+					"match": "(?<=:\\s*)(!.*)"
 				},
 				{
-					"name": "keyword.comment.fanuctpp",
+					"name": "keyword.comment.fanuctp_ls",
 					"match": "//(.*)$"
 				},
 				{
-					"name": "keyword.control.fanuctpp",
+					"name": "keyword.control.fanuctp_ls",
 					"match": "\\b(JMP|LBL|CALL|IF|THEN|ELSE|ENDIF|END|WAIT|SKIP|CONDITION|J|L|C|AND|OR|TIMEOUT|SELECT|RUN|LOCK|UNLOCK|PREG|ABORT|PAUSE)\\b"
 				},
 				{
-					"name": "keyword.movetype.fanuctpp",
+					"name": "keyword.movetype.fanuctp_ls",
 					"match": "(\\bCNT\\d+|\\bFINE)"
 				},
 				{
-					"name": "keyword.on.fanuctpp",
+					"name": "keyword.on.fanuctp_ls",
 					"match": "\\b(ON)\\b"
 				},
 				{
-					"name": "keyword.off.fanuctpp",
+					"name": "keyword.off.fanuctp_ls",
 					"match": "\\b(OFF)\\b"
 				},
 				{
-					"name": "keyword.headerspace.fanuctpp",
-					"begin": "/PROG",
+					"name": "keyword.headerspace.fanuctp_ls",
+					"begin": "/APPL",
 					"end": "/MN"
 				},
 				{
-					"name": "keyword.header.fanuctpp",
+					"name": "keyword.header.fanuctp_ls",
 					"match": "(\\b|\\/)(PROG|ATTR|APPL|MN|POS|END|Macro|MNEDITOR|DATE|TIME|READ|READ_WRITE|OWNER|COMMENT|PROG_SIZE|CREATE|MODIFIED|FILE_NAME|VERSION|LINE_COUNT|MEMORY_SIZE|PROTECT|TCD|STACK_SIZE|TASK_PRIORITY|TIME_SLICE|BUSY_LAMP_OFF|ABORT_REQUEST|PAUSE_REQUEST|DEFAULT_GROUP|CONTROL_CODE|LOCAL_REGISTERS)(\\b|\\.)"
 				},
 				{
-					"name": "keyword.operator.fanuctpp",
+					"name": "keyword.operator.fanuctp_ls",
 					"match": "(\\+|\\-|\\<|\\=|\\>|\\!|\\%)"
 				},
 				{
-					"name": "keyword.label.fanuctpp",
+					"name": "keyword.label.fanuctp_ls",
 					"match": "(?<=\\[\\d+:)(.*?)(?=\\])"
 				},
 				{
-					"name": "keyword.variable.fanuctpp",
+					"name": "keyword.variable.fanuctp_ls",
 					"match": "\\$\\w+"
 				}
 			]
@@ -63,16 +66,30 @@
 		"constants": {
 			"patterns": [					
 				{
-					"name": "constant.numeric.fanuctpp",
+					"name": "constant.numeric.fanuctp_ls",
 					"match": "\\b\\d+\\.?\\d*\\b"
 				},				
 				{
-					"name": "constant.language.fanuctpp",
-					"match": "\\b(UTOOL_NUM|UFRAME_NUM|UTOOL|UFRAME|OVERRIDE|RSR|UALM|PAYLOAD|TIMER|DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|PR|UF|UT|CONFIG|X|Y|Z|W|P|R)\\b"
+					"name": "constant.language.fanuctp_ls",
+					"match": "\\b(UTOOL_NUM|UFRAME_NUM|UTOOL|UFRAME|OVERRIDE|RSR|UALM|PAYLOAD|TIMER|DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|PR|UF|UT|CONFIG|X|Y|Z|W|P|R|U|T|N)\\b"
 				},
 				{
-					"name": "constant.newline.fanuctpp",
+					"name": "constant.newline.fanuctp_ls",
 					"match": "^\\s*\\d{1,4}:"
+				}
+			]
+		},
+		"strings": {
+			"patterns": [
+				{
+					"name": "string.single_quote.fanuctp_ls",
+					"begin": "\\'",
+					"end": "\\'"
+				},
+				{
+					"name": "string.double_quote.fanuctp_ls",
+					"begin": "\"",
+					"end": "\""
 				}
 			]
 		}

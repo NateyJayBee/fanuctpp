@@ -1,0 +1,25 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Fanuc Karel Programming",
+	"scopeName": "source.fanuctp_kl",
+	"patterns": [
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#constants"
+		}
+	],
+	"repository": {
+		"keywords": {
+			"patterns": [
+				
+			]
+		},
+		"constants": {
+			"patterns": [					
+				
+			]
+		}
+	}
+}

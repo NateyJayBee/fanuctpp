@@ -1,7 +1,3 @@
-# Ignore the .vscode directory
-.vscode/
-.vscode
-
 # Ignore specific files
 config.json
 secret.txt

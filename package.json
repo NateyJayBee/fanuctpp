@@ -7,14 +7,14 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "watch": "tsc -watch -p .",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "vscode-test"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",
-    "@types/node": "20.x",
+    "@types/node": "^20.16.5",
     "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^7.14.1",
     "@typescript-eslint/parser": "^7.11.0",
@@ -33,38 +33,55 @@
   "contributes": {
     "languages": [
       {
-        "id": "fanuctpp",
+        "id": "fanuctp_ls",
         "aliases": [
           "Fanuc Teach Pendant Programming",
-          "fanuctpp"
+          "Fanuc LS"
         ],
         "extensions": [
           ".ls"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./fanuc_ls_lang_config.json"
+      },
+      {
+        "id": "fanuctp_kl",
+        "aliases": [
+          "Fanuc Karel Programming",
+          "Fanuc KL"
+        ],
+        "extensions": [
+          ".kl"
+        ],
+        "configuration": "./fanuc_kl_lang_config.json"
       }
     ],
     "commands": [
-      {
-        "command": "onDidChangeTextDocument",
-        "title": "onDidChangeTextDocument"
-      }
     ],
     "grammars": [
       {
-        "language": "fanuctpp",
-        "scopeName": "source.fanuctpp",
-        "path": "./syntaxes/fanuctpp.tmLanguage.json"
+        "language": "fanuctp_ls",
+        "scopeName": "source.fanuctp_ls",
+        "path": "./syntaxes/fanuctp_ls.tmLanguage.json"
+      },
+      {
+        "language": "fanuctp_kl",
+        "scopeName": "source.fanuctp_kl",
+        "path": "./syntaxes/fanuctp_kl.tmLanguage.json"
       }
     ],
     "themes": [
       {
-        "label": "FanucTpp themes",
-        "id": "fanuctpp",
+        "label": "FanucLS",
+        "id": "fanuctp_ls",
         "uiTheme": "vs-dark",
-        "path": "./themes/fanuctpp.tmTheme.json"
+        "path": "./themes/fanuctpp_ls.tmTheme.json"
+      },
+      {
+        "label": "FanucKL",
+        "id": "fanuctp_kl",
+        "uiTheme": "vs-dark",
+        "path": "./themes/fanuctpp_kl.tmTheme.json"
       }
     ]
   }
 }
-
