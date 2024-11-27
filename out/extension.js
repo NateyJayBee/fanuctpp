@@ -179,7 +179,7 @@ function updateLineNumbers(document, currLine, lineCreated, lineDeleted, autoLin
             const text = document.getText();
             const lines = text.split('\r\n');
             const lineNumRegex = /^\s*(\d{1,4}):/;
-            const noSemiNumRegex = /^\s*(\d{1,4}):\s*$/;
+            const noSemiNumRegex = /^\s*(\d{1,4}):\s*[^;]*$/;
             const twoSemiRegex = /\s*;\s*;\s*$/;
             // LINE CREATED
             if (lineCreated) {
@@ -214,16 +214,6 @@ function updateLineNumbers(document, currLine, lineCreated, lineDeleted, autoLin
                 }
             }
             // Iterate over each line in the document starting at next position
-            //for (let i = (currLine); i < lines.length && i <= (endLine + 1); i++) {
-            //    const match = lines[i].match(lineNumRegex);
-            //    if (match) {
-            //        let newLineNumber = parseInt(match[1], 10);
-            //        newLineNumber = i - startLine + 1;
-            //        const formattedLineNumber = newLineNumber.toString().padStart(4, ' '); // Ensure 4 characters
-            //        const nextLineText = lines[i].replace(lineNumRegex, `${formattedLineNumber}:`);
-            //        edits.push(vscode.TextEdit.replace(new vscode.Range(i, 0, i, lines[i].length), nextLineText));
-            //    }
-            //}
             for (let i = currLine; i < lines.length && i <= endLine + 1; i++) {
                 const match = lines[i].match(lineNumRegex);
                 if (match) {
