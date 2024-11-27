@@ -92,7 +92,7 @@ function activate(context) {
         }
         console.log('manual change, using handler');
         if (event.document.languageId === 'fanuctp_ls') {
-            const newLineCreated = event.contentChanges.some(change => change.text.includes('\n'));
+            const lineCreated = event.contentChanges.some(change => change.text.includes('\n'));
             //const lineDeleted = event.contentChanges.some(change => change.rangeLength > 0 && change.text === '');
             const lineDeleted = event.contentChanges.some(change => {
                 const startLine = change.range.start.line;
@@ -100,11 +100,18 @@ function activate(context) {
                 const isWholeLineDeleted = change.range.start.character === 0 && change.range.end.character === 0 && startLine !== endLine;
                 return change.rangeLength > 0 && change.text === '' && (isWholeLineDeleted || startLine !== endLine);
             });
-            if (newLineCreated || lineDeleted) {
-                yield updateLineNumbers(event.document, lineNumber, newLineCreated, lineDeleted, autoLineRenum, autoSemi);
+            if (lineCreated || lineDeleted) {
+                yield updateLineNumbers(event.document, lineNumber, lineCreated, lineDeleted, autoLineRenum, autoSemi);
             }
             // Move cursor to column 8 on new line creation
-            if (newLineCreated) {
+            if (lineCreated) {
+                const editor = vscode.window.activeTextEditor;
+                if (editor) {
+                    const newPosition = new vscode.Position(lineNumber - 1, 7);
+                    editor.selection = new vscode.Selection(newPosition, newPosition);
+                }
+            }
+            if (lineDeleted) {
                 const editor = vscode.window.activeTextEditor;
                 if (editor) {
                     const newPosition = new vscode.Position(lineNumber - 1, 7);
@@ -112,7 +119,7 @@ function activate(context) {
                 }
             }
         }
-    }), 25); // Adjust the debounce delay as needed
+    }), 15); // Adjust the debounce delay as needed
     const disposeDebounceChange = vscode.workspace.onDidChangeTextDocument(debouncedOnDidChangeTextDocument);
     // Register the standalone command
     const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', () => __awaiter(this, void 0, void 0, function* () {
@@ -184,11 +191,16 @@ function updateLineNumbers(document, currLine, lineCreated, lineDeleted, autoLin
                 }
                 const newLineNumber = currLine - startLine; // New Line just created
                 let formattedNewLineNumber = newLineNumber.toString().padStart(4, ' ') + ':';
-                if (autoSemi) {
-                    formattedNewLineNumber = newLineNumber.toString().padStart(4, ' ') + ':   ;';
+                let newLineText = formattedNewLineNumber;
+                if (autoSemi && !/^\s*$/.test(lines[currLine - 1])) {
+                    newLineText = formattedNewLineNumber + lines[currLine - 1];
                 }
-                lines[currLine - 1] = formattedNewLineNumber;
-                edits.push(vscode.TextEdit.replace(new vscode.Range(currLine - 1, 0, currLine - 1, lines[currLine - 1].length), formattedNewLineNumber));
+                else {
+                    formattedNewLineNumber = newLineNumber.toString().padStart(4, ' ') + ':   ;';
+                    newLineText = formattedNewLineNumber;
+                }
+                lines[currLine - 1] = newLineText;
+                edits.push(vscode.TextEdit.replace(new vscode.Range(currLine - 1, 0, currLine - 1, lines[currLine - 1].length), newLineText));
             }
             // LINE DELETED
             if (lineDeleted) {
@@ -202,19 +214,23 @@ function updateLineNumbers(document, currLine, lineCreated, lineDeleted, autoLin
                 }
             }
             // Iterate over each line in the document starting at next position
-            for (let i = (currLine); i < lines.length && i <= (endLine + 1); i++) {
+            //for (let i = (currLine); i < lines.length && i <= (endLine + 1); i++) {
+            //    const match = lines[i].match(lineNumRegex);
+            //    if (match) {
+            //        let newLineNumber = parseInt(match[1], 10);
+            //        newLineNumber = i - startLine + 1;
+            //        const formattedLineNumber = newLineNumber.toString().padStart(4, ' '); // Ensure 4 characters
+            //        const nextLineText = lines[i].replace(lineNumRegex, `${formattedLineNumber}:`);
+            //        edits.push(vscode.TextEdit.replace(new vscode.Range(i, 0, i, lines[i].length), nextLineText));
+            //    }
+            //}
+            for (let i = currLine; i < lines.length && i <= endLine + 1; i++) {
                 const match = lines[i].match(lineNumRegex);
                 if (match) {
-                    lineNumber = parseInt(match[1], 10);
-                    if (lineCreated) {
-                        lineNumber = lineNumber + 1;
-                    }
-                    else {
-                        lineNumber = lineNumber - 1;
-                    }
-                    const formattedLineNumber = lineNumber.toString().padStart(4, ' '); // Ensure 4 characters
-                    const nextLineText = lines[i].replace(lineNumRegex, `${formattedLineNumber}:`);
-                    edits.push(vscode.TextEdit.replace(new vscode.Range(i, 0, i, lines[i].length), nextLineText));
+                    const newLineNumber = (i - startLine + 1).toString().padStart(4, ' '); // Calculate and format the new line number
+                    const nextLineText = lines[i].replace(lineNumRegex, `${newLineNumber}:`); // Replace the line number in the text
+                    const lineLength = document.lineAt(i).text.length; // Get the length of the current line
+                    edits.push(vscode.TextEdit.replace(new vscode.Range(i, 0, i, lineLength), nextLineText)); // Create and push the TextEdit
                 }
             }
         }
