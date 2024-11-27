@@ -3,14 +3,12 @@
     "tasks": [
       {
         "label": "npm: watch",
-        "type": "shell",
-        "command": "npm run watch",
-        "problemMatcher": ["$tsc-watch"],
+        "type": "npm",
+        "script": "watch",
         "isBackground": true,
-        "presentation": {
-          "reveal": "always",
-          "panel": "shared"
-        }
+        "problemMatcher": [
+          "$tsc-watch"
+        ]
       },
       {
         "label": "npm: compile",

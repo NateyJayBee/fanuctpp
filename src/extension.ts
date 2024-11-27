@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-//fileDict 1 entry per document
-//start line, end line, line edits enabled, total lines
+// GLOBAL VARIABLES
+
+// fileDict 1 entry per document
+// start line, end line, line edits enabled, total lines
 let fileDict: { [key: string]: [number, number, boolean, number] } = {};
 
 let isAutoUpd = false;
@@ -39,36 +41,40 @@ export function activate(context: vscode.ExtensionContext) {
         lineNumber = getCurrentLineNumber(event.textEditor);
     });
 
-    // Debounced handler for text document changes
-    const debouncedOnDidChangeTextDocument = debounce(async (event: vscode.TextDocumentChangeEvent) => {
-        if (isAutoUpd) {
-            console.log('automatic change, skipping handler');
-            return;
+// Debounced handler for text document changes
+const debouncedOnDidChangeTextDocument = debounce(async (event: vscode.TextDocumentChangeEvent) => {
+    if (isAutoUpd) {
+        console.log('automatic change, skipping handler');
+        return;
+    }
+
+    console.log('manual change, using handler');
+
+    if (event.document.languageId === 'fanuctp_ls') {
+        const newLineCreated = event.contentChanges.some(change => change.text.includes('\n'));
+        const lineDeleted = event.contentChanges.some(change => change.rangeLength > 0 && change.text === '');
+
+        if (newLineCreated || lineDeleted) {
+            await updateLineNumbers(event.document, lineNumber, newLineCreated, lineDeleted);
         }
+    }
+}, 250); // Adjust the debounce delay as needed
 
-        console.log('manual change, using handler');
+const disposeDebounceChange = vscode.workspace.onDidChangeTextDocument(debouncedOnDidChangeTextDocument);
 
-        if (event.document.languageId === 'fanuctp_ls') {
-            const editor = vscode.window.activeTextEditor;
-            const newLineCreated = event.contentChanges.some(change => change.text.includes('\n'));
-            if (newLineCreated) {
-                await updateLineNumbers(event.document, lineNumber);
-            }
-        }
-    }, 50); // Adjust the debounce delay as needed
+// Register the standalone command
+const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', async () => {
+    const editor = vscode.window.activeTextEditor;
+    if (editor && editor.document.languageId === 'fanuctp_ls') {
+        await updateLineNumbers(editor.document, lineNumber, false, false);
+    }
+});
 
-    const disposeDebounceChange = vscode.workspace.onDidChangeTextDocument(debouncedOnDidChangeTextDocument);
-
-    // Pushing all event listeners to the context
-    context.subscriptions.push(disposeDebounceChange, disposeOpen, disposeSelection);
+// Pushing all event listeners and commands to the context
+context.subscriptions.push(disposeDebounceChange, disposeOpen, disposeSelection, disposableCommand);
 }
 
-//gets the line number of a regex match
-function getLineNumberFromPosition(position: number, text: string) {
-    return text.substring(0, position).split('\n').length;
-}
-
-//gets the line number the cursor is currently on
+// Gets the line number the cursor is currently on
 function getCurrentLineNumber(editor: vscode.TextEditor) {
     if (editor) {
         const position = editor.selection.active;
@@ -82,7 +88,8 @@ function getCurrentLineNumber(editor: vscode.TextEditor) {
 }
 
 // Updates the line numbers in the document
-async function updateLineNumbers(document: vscode.TextDocument, currLine: number) {
+// Called on document change in total line numbers
+async function updateLineNumbers(document: vscode.TextDocument, currLine: number, newLineCreated: boolean, lineDeleted: boolean) {
     const fileName = path.basename(document.fileName);
 
     if (!(fileName in fileDict)) {
@@ -96,23 +103,31 @@ async function updateLineNumbers(document: vscode.TextDocument, currLine: number
         return;
     }
 
-    console.log(`updt: Current line number: ${currLine}`);
+    // console.log(`updt: Current line number: ${currLine}`);
 
     const text = document.getText();
-    const lines = text.split('\n');
+    const lines = text.split('\r\n');
     const lineNumRegex = /^\s*(\d{1,4}):/;
     const edits: vscode.TextEdit[] = [];
 
-    // Iterate over each line in the document starting at current position
+    // Ensure new line is not in the headers
     if (startLine < currLine && currLine < endLine) {
-        for (let i = currLine; i < lines.length && i <= endLine; i++) {
+        if(newLineCreated) {
+            const newLineNumber = currLine - startLine; // New Line just created
+            const formattedNewLineNumber = newLineNumber.toString().padStart(4, ' ') + ':  ';
+            lines[currLine-1] = formattedNewLineNumber;
+            edits.push(vscode.TextEdit.replace(new vscode.Range(currLine - 1, 0, currLine - 1, lines[currLine - 1].length), formattedNewLineNumber));
+        }
+        // Iterate over each line in the document starting at next position
+        for (let i = (currLine); i < lines.length && i <= (endLine + 1); i++) {
             const match = lines[i].match(lineNumRegex);
             if (match) {
                 const lineNumber = parseInt(match[1], 10);
-                const newLineNumber = lineNumber + 1; // Example increment
-                const newLineText = lines[i].replace(lineNumRegex, `${newLineNumber}:`);
+                const nextLineNumber = lineNumber + 1; // Example increment
+                const formattedLineNumber = nextLineNumber.toString().padStart(4, ' '); // Ensure 4 characters
+                const nextLineText = lines[i].replace(lineNumRegex, `${formattedLineNumber}:`);
                 //console.log(`updt: Line ${i + 1} changed from ${lines[i]} to ${newLineText}`);
-                edits.push(vscode.TextEdit.replace(new vscode.Range(i, 0, i, lines[i].length), newLineText));
+                edits.push(vscode.TextEdit.replace(new vscode.Range(i, 0, i, lines[i].length), nextLineText));
             }
         }
     }
@@ -124,24 +139,26 @@ async function updateLineNumbers(document: vscode.TextDocument, currLine: number
     
     isAutoUpd = true;
     console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
-    await vscode.workspace.applyEdit(edit);
+    vscode.workspace.applyEdit(edit);
     isAutoUpd = false;
     console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
+
+    setLineNumbers(document);
+}
+
+// Gets the line number of a regex match
+function getLineNumberFromPosition(position: number, text: string) {
+    return text.substring(0, position).split('\n').length;
 }
 
 // Constructs the fileDict entry for the document
-function setLineNumbers(document: vscode.TextDocument) {
+// Calles on document open
+async function setLineNumbers(document: vscode.TextDocument) {
     const fileName = path.basename(document.fileName);
-
-    if (fileName in fileDict) {
-        return;
-    }
-
-    console.log(`set: Setting line numbers for ${fileName}`);
 
     const posEndRegex = /\/POS/;
     const endRegex = /\/END/;
-    const endHeaderRegex = /\/MN/;
+    const headerEndRegex = /\/MN/;
     const text = document.getText();
     const lines = text.split('\n');
     let headExists: boolean = false;
@@ -151,16 +168,16 @@ function setLineNumbers(document: vscode.TextDocument) {
     let tpLineStart: number = -1; 
     let tpLineEnd: number = -1;
 
-    const headMatch = endHeaderRegex.exec(text);
+    const headMatch = headerEndRegex.exec(text);
     if (headMatch) {
-        tpLineStart = getLineNumberFromPosition(headMatch.index, text) + 1;
+        tpLineStart = getLineNumberFromPosition(headMatch.index, text);
         headExists = true;
     }
 
     // Find matches for posRegex
     const posMatch = posEndRegex.exec(text);
     if (posMatch) {
-        tpLineEnd = getLineNumberFromPosition(posMatch.index, text) - 1;
+        tpLineEnd = getLineNumberFromPosition(posMatch.index, text);
         posExists = true;
     }
 
@@ -168,15 +185,16 @@ function setLineNumbers(document: vscode.TextDocument) {
     if (!posExists) {
         const endMatch = endRegex.exec(text);
         if (endMatch) {
-            tpLineEnd = getLineNumberFromPosition(endMatch.index, text) - 1;
+            tpLineEnd = getLineNumberFromPosition(endMatch.index, text);
             endExists = true;
         }
     }
 
-    if (!(fileName in fileDict)) {
-        fileDict[fileName] = [tpLineStart, tpLineEnd, (headExists && (endExists || posExists)), lines.length];
-    }
+    fileDict[fileName] = [tpLineStart, tpLineEnd, (headExists && (endExists || posExists)), lines.length];
     
+    
+    console.log(`set: Setting line numbers for ${fileName}`);
+    console.log('set: ' + JSON.stringify(fileDict));
 }
 
 export function deactivate() {}

@@ -1,0 +1,9 @@
+//"scope": "keyword.remark.fanuctpp",
+//"settings": 
+//"foreground": "#E06666"
+
+{
+        "name": "keyword.headerspace.fanuctp_ls",
+        "begin": "/PROG",
+        "end": "/MN"
+},

@@ -5,12 +5,8 @@
   "version": "0.0.1",
   "main": "./out/extension.js",
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
     "watch": "tsc -watch -p .",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "vscode-test"
+    "compile": "tsc -p ."
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",

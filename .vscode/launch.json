@@ -2,19 +2,17 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch Extension",
             "type": "extensionHost",
             "request": "launch",
-            "name": "Run Extension",
-            "runtimeExecutable": "${execPath}",
             "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}"
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "--nolazy"
             ],
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"
             ],
             "preLaunchTask": "npm: watch",
-            "sourceMaps": true,
-            "smartStep": true
         }
     ]
 }
