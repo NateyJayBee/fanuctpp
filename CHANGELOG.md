@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.0.2] - YYYY-MM-DD
+### Added
+- Automatic teach pendant line renumbering on document text change
+- teach pendant line renumbering command
+
+
 ## [0.0.1]
 
 - Pre-release changes
