@@ -214,7 +214,6 @@ function updateLineNumbers(document, currLine, lineCreated, lineDeleted, autoLin
                     }
                     const formattedLineNumber = lineNumber.toString().padStart(4, ' '); // Ensure 4 characters
                     const nextLineText = lines[i].replace(lineNumRegex, `${formattedLineNumber}:`);
-                    //console.log(`updt: Line ${i + 1} changed from ${lines[i]} to ${newLineText}`);
                     edits.push(vscode.TextEdit.replace(new vscode.Range(i, 0, i, lines[i].length), nextLineText));
                 }
             }
