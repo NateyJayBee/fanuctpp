@@ -11,9 +11,6 @@ let isAutoUpd = false;
 let skipSelectionChange = false;
 let lineNumber: number = 0;
 
-// Line 36
-let isUpdatingLineNumbers = false;
-
 // Debounce function to delay execution
 function debounce(func: (...args: any[]) => void, wait: number) {
     let timeout: NodeJS.Timeout;
@@ -69,11 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
                 const isWholeLineDeleted = change.range.start.character === 0 && change.range.end.character === 0 && startLine !== endLine;
                 return change.rangeLength > 0 && change.text === '' && (isWholeLineDeleted || startLine !== endLine);
             });
-
-            //if (lineCreated || lineDeleted) {
-            //console.log(`doc: Line Count Changed: ${lineCreated ? 'Line Created' : 'Line Deleted'} at line ${lineNumber}`);
             await updateLineNumbers(event.document, lineNumber, lineCreated, lineDeleted, autoLineRenum, autoSemi);
-            //}
         }
     }, 0); // Adjust the debounce delay as needed
 
@@ -103,7 +96,7 @@ export function activate(context: vscode.ExtensionContext) {
 // Called on command execution
 async function updateLineNumbers(document: vscode.TextDocument, lineNumber: number, lineCreated: boolean, 
                                 lineDeleted: boolean, autoLineRenum: boolean, autoSemi: boolean) {
-    if (!autoLineRenum) {
+    if (!autoLineRenum || !autoSemi) {
         return;
     }
     // Get the file name of the document
@@ -119,8 +112,6 @@ async function updateLineNumbers(document: vscode.TextDocument, lineNumber: numb
         return;
     }
 
-    // console.log(`updt: Current line number: ${currLine}`);
-
     const edits: vscode.TextEdit[] = [];
     const editor = vscode.window.activeTextEditor;
 
@@ -128,11 +119,11 @@ async function updateLineNumbers(document: vscode.TextDocument, lineNumber: numb
         console.log('updt: No active editor');
         return;
     }
+
+    // Get the current position of the cursor
     const position = editor.selection.active;
     lineNumber = position.line + 1;
-    let editLineNumber = lineNumber;
 
-    //if(lineCreated || lineDeleted) {
     const inRange = startLine < lineNumber && lineNumber < endLine
     if (!inRange) {
         return;
@@ -196,6 +187,7 @@ async function updateLineNumbers(document: vscode.TextDocument, lineNumber: numb
         console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
 
     }
+    // If no line diff return
     else {
         return
     }
@@ -206,6 +198,7 @@ async function updateLineNumbers(document: vscode.TextDocument, lineNumber: numb
 
 // Constructs the fileDict entry for the document
 // Calles on document open
+// Called in docuemnt change
 async function setLineNumbers(document: vscode.TextDocument) {
     const fileName = path.basename(document.fileName);
 
