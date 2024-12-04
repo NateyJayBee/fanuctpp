@@ -48,12 +48,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Debounced handler for text document changes
     const debouncedOnDidChangeTextDocument = debounce(async (event: vscode.TextDocumentChangeEvent) => { 
-        setLineNumbers(event.document);
         if (isAutoUpd) {
             console.log('doc: automatic change, skipping handler');
             return;
         }
         console.log('doc: debouncedOnDidChangeTextDocument');
+
+        setLineNumbers(event.document);
 
         //console.log('manual change, using handler');
 
@@ -66,9 +67,9 @@ export function activate(context: vscode.ExtensionContext) {
                 const isWholeLineDeleted = change.range.start.character === 0 && change.range.end.character === 0 && startLine !== endLine;
                 return change.rangeLength > 0 && change.text === '' && (isWholeLineDeleted || startLine !== endLine);
             });
-            await updateLineNumbers(event.document, lineNumber, lineCreated, lineDeleted, autoLineRenum, autoSemi);
+            await updateLineNumbers(event.document, autoLineRenum, autoSemi);
         }
-    }, 0); // Adjust the debounce delay as needed
+    }, 50); // Adjust the debounce delay as needed
 
     const disposeDebounceChange = vscode.workspace.onDidChangeTextDocument(debouncedOnDidChangeTextDocument)
 
@@ -94,8 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
 // Updates the line numbers in the document
 // Called on document change in total line numbers
 // Called on command execution
-async function updateLineNumbers(document: vscode.TextDocument, lineNumber: number, lineCreated: boolean, 
-                                lineDeleted: boolean, autoLineRenum: boolean, autoSemi: boolean) {
+async function updateLineNumbers(document: vscode.TextDocument, autoLineRenum: boolean, autoSemi: boolean) {
     if (!autoLineRenum || !autoSemi) {
         return;
     }
@@ -137,8 +137,9 @@ async function updateLineNumbers(document: vscode.TextDocument, lineNumber: numb
     const blankLineRegex = /^\s*[\r\n]?$/;
     const lineNumRegex = /^\s*(\d{1,4}):/;
     const noSemiNumRegex = /^\s*(\d{1,4}):\s*[^;]*$/;
-    const twoSemiRegex = /\s*;\s*;\s*$/;
+    const twoSemiEndRegex = /\s*;\s*;\s*$/;
     const onlySemiRegex = /^\s*(\d{1,4}:)?\s*;$/;
+    const moveRegex = /[JL]\s/;
 
     // SKIPPED LINES
     let diff = Math.abs(totalLines - processedLines);
@@ -155,16 +156,19 @@ async function updateLineNumbers(document: vscode.TextDocument, lineNumber: numb
                 lineText = (i + 1).toString().padStart(4, ' ') + ":   ;";
             } 
             else if (noSemiNumRegex.test(lineText)) {
-                lineText = (i + 1).toString().padStart(4, ' ') + ":  " + lineText.slice(5).trimEnd().trimStart() + ' ;';   
+                lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5).trimEnd() + '   ;';   
             }
             else if (onlySemiRegex.test(lineText)) {
                 lineText = (i + 1).toString().padStart(4, ' ') + ":   ;";
             }
-            else if (lineNumRegex.test(lineText)) {
-                lineText = (i + 1).toString().padStart(4, ' ') + ":  " + lineText.slice(5).trimStart();
+            else if (twoSemiEndRegex.test(lineText)) {
+                lineText = (i + 1).toString().padStart(4, ' ') + ":" + "   ;";
             }
-            else if (twoSemiRegex.test(lineText)) {
-                lineText = (i + 1).toString().padStart(4, ' ') + ":   ;";
+            else if (lineNumRegex.test(lineText)) {
+                lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5);
+            }
+            else if (moveRegex.test(lineText)) {
+                lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.trimStart();
             }
             else {
                 lineText = (i + 1).toString().padStart(4, ' ') + ":  " + lineText.trimStart();
@@ -185,6 +189,11 @@ async function updateLineNumbers(document: vscode.TextDocument, lineNumber: numb
         await vscode.workspace.applyEdit(edit);
         isAutoUpd = false;
         console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
+
+        // move the cursor to the normal TP start column
+        //const column = 7; 
+        //const position = new vscode.Position(lineNumber-1, column);
+        //editor.selection = new vscode.Selection(position, position);
 
     }
     // If no line diff return
@@ -243,7 +252,7 @@ async function setLineNumbers(document: vscode.TextDocument) {
     }
     
     //console.log(`set: Setting line numbers for ${fileName}`);
-    console.log('set: ' + JSON.stringify(fileDict));
+    console.log('set: ' + JSON.stringify(fileDict[fileName]));
 }
 
 export function deactivate() {}
