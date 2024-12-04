@@ -189,9 +189,9 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
             isAutoUpd = false;
             console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
             // move the cursor to the normal TP start column
-            //const column = 7; 
-            //const position = new vscode.Position(lineNumber-1, column);
-            //editor.selection = new vscode.Selection(position, position);
+            const column = 7;
+            const position = new vscode.Position(lineNumber - 1, column);
+            editor.selection = new vscode.Selection(position, position);
         }
         // If no line diff return
         else {
