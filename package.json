@@ -35,22 +35,22 @@
       {
         "id": "fanuctp_ls",
         "aliases": [
-          "Fanuc Teach Pendant Programming",
           "Fanuc LS"
         ],
         "extensions": [
-          ".ls"
+          ".ls",
+          ".LS"
         ],
         "configuration": "./fanuc_ls_lang_config.json"
       },
       {
         "id": "fanuctp_kl",
         "aliases": [
-          "Fanuc Karel Programming",
           "Fanuc KL"
         ],
         "extensions": [
-          ".kl"
+          ".kl",
+          ".KL"
         ],
         "configuration": "./fanuc_kl_lang_config.json"
       }
