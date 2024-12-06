@@ -40,6 +40,8 @@ const path = __importStar(require("path"));
 // fileDict 1 entry per document
 // start line,  end line,  line edits enabled,  total lines,  edit lines
 let fileDict = {};
+let panel;
+let lastActiveEditor;
 let isAutoUpd = false;
 let skipSelectionChange = false;
 let lineNumber = 0;
@@ -91,7 +93,7 @@ function activate(context) {
             });
             yield updateLineNumbers(event.document, autoLineRenum, autoSemi);
         }
-    }), 50); // Adjust the debounce delay as needed
+    }), 50);
     const disposeDebounceChange = vscode.workspace.onDidChangeTextDocument(debouncedOnDidChangeTextDocument);
     // ------------------COMMANDS-------------------
     // Register the standalone command
@@ -103,8 +105,66 @@ function activate(context) {
     //        await updateLineNumbers(editor.document, lineNumber, lineCreated, lineDeleted, true, false);
     //    }
     //});
+    // Register the command to open the webview
+    const disposeLabelWindow = vscode.commands.registerCommand('extension.openLabelView', () => {
+        let editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+        lastActiveEditor = editor;
+        const document = editor.document;
+        const labels = extractLabels(document);
+        panel = vscode.window.createWebviewPanel('labelView', // Identifies the type of the webview. Used internally
+        'Label View', // Title of the panel displayed to the user
+        vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
+        {
+            enableScripts: true // Enable scripts in the webview
+        });
+        // Set the HTML content
+        panel.webview.html = getWebviewContent(labels);
+        // Handle messages from the webview
+        panel.webview.onDidReceiveMessage(message => {
+            switch (message.command) {
+                case 'gotoLabel':
+                    const label = message.label;
+                    editor = vscode.window.activeTextEditor;
+                    if (lastActiveEditor) {
+                        gotoLabel(lastActiveEditor, label);
+                    }
+                    return;
+            }
+        }, undefined, context.subscriptions);
+        // Listen for when the panel is disposed
+        panel.onDidDispose(() => {
+            panel = undefined;
+        }, null, context.subscriptions);
+    });
+    // Listen for active editor changes
+    const disposeActiveEditorChange = vscode.window.onDidChangeActiveTextEditor(editor => {
+        if (editor && editor.document.languageId === 'fanuctp_ls') {
+            lastActiveEditor = editor;
+            console.log('active: active editor changed');
+            const document = editor.document;
+            const labels = extractLabels(document);
+            // Update the Webview content
+            if (panel) {
+                panel.webview.html = getWebviewContent(labels);
+                // Re-register the message handler for the new editor
+                panel.webview.onDidReceiveMessage(message => {
+                    switch (message.command) {
+                        case 'gotoLabel':
+                            const label = message.label;
+                            if (lastActiveEditor) {
+                                gotoLabel(lastActiveEditor, label);
+                            }
+                            return;
+                    }
+                }, undefined, context.subscriptions);
+            }
+        }
+    });
     // Pushing all event listeners and commands to the context
-    context.subscriptions.push(disposeOpen, disposeDebounceChange);
+    context.subscriptions.push(disposeOpen, disposeDebounceChange, disposeLabelWindow, disposeActiveEditorChange);
 }
 // ------------------EVENT HANDLER LOGIC-------------------
 // Updates the line numbers in the document
@@ -141,12 +201,20 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
         const text = document.getText();
         const lines = text.split('\r\n');
         let tpLines = lines.slice(startLine, endLine - 1);
+        // Line with only whitespace
         const blankLineRegex = /^\s*[\r\n]?$/;
+        // Line with a line number
         const lineNumRegex = /^\s*(\d{1,4}):/;
+        // Line that doesn't have a semicolon at the end
         const noSemiNumRegex = /^\s*(\d{1,4}):\s*[^;]*$/;
+        // Line with 2 semicolons at the end
         const twoSemiEndRegex = /\s*;\s*;\s*$/;
+        // Line that only has a semicolon
         const onlySemiRegex = /^\s*(\d{1,4}:)?\s*;$/;
-        const moveRegex = /[JL]\s/;
+        // Line with semicolon at start and end
+        const betweenSemiRegex = /^\s*(\d{1,4}):\s*;([^;]*);$/;
+        // Lines with movements
+        const moveRegex = /(^\s*(\d{1,4}):|\s+)\s*[JL]\s/;
         // SKIPPED LINES
         let diff = Math.abs(totalLines - processedLines);
         if (diff >= 1) {
@@ -159,6 +227,20 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
                 if (blankLineRegex.test(lineText)) {
                     lineText = (i + 1).toString().padStart(4, ' ') + ":   ;";
                 }
+                else if (betweenSemiRegex.test(lineText)) {
+                    //lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5).replace(betweenSemiRegex, '$2;');
+                    const match = lineText.match(betweenSemiRegex);
+                    if (match) {
+                        let content = match[2].trim();
+                        if (content.startsWith("J ") || content.startsWith("L ")) {
+                            // Handle lines starting with "J " or "L "
+                            lineText = (i + 1).toString().padStart(4, ' ') + ":" + content + ' ;';
+                        }
+                        else {
+                            lineText = (i + 1).toString().padStart(4, ' ') + ":  " + content + ' ;';
+                        }
+                    }
+                }
                 else if (noSemiNumRegex.test(lineText)) {
                     lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5).trimEnd() + '   ;';
                 }
@@ -166,7 +248,8 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
                     lineText = (i + 1).toString().padStart(4, ' ') + ":   ;";
                 }
                 else if (twoSemiEndRegex.test(lineText)) {
-                    lineText = (i + 1).toString().padStart(4, ' ') + ":" + "   ;";
+                    //lineText = (i + 1).toString().padStart(4, ' ') + ":" + "   ;";
+                    lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');
                 }
                 else if (lineNumRegex.test(lineText)) {
                     lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5);
@@ -244,6 +327,110 @@ function setLineNumbers(document) {
         //console.log(`set: Setting line numbers for ${fileName}`);
         console.log('set: ' + JSON.stringify(fileDict[fileName]));
     });
+}
+// Label extraction
+function extractLabels(document) {
+    const labelRegex = /^\s*(\d{1,4}:)\s*LBL\[\d+(?::[^\]]+)?\]/g;
+    const labels = [];
+    // Get the file name of the document
+    const fileName = path.basename(document.fileName);
+    if (!(fileName in fileDict)) {
+        return ["No labels found"];
+    }
+    // Destructure with default values
+    let [startLine, endLine] = fileDict[fileName] || [0, document.lineCount];
+    for (let i = startLine; i < endLine + 1; i++) {
+        const line = document.lineAt(i).text;
+        const matches = line.match(labelRegex);
+        if (matches) {
+            matches.forEach(match => {
+                labels.push(match.slice(7).trim());
+            });
+        }
+    }
+    return labels;
+}
+function getWebviewContent(labels) {
+    const labelList = labels.map(label => `<li data-label="${label}"><span class="icon">🔖</span>${label}</li>`).join('');
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label View</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 10px;
+        }
+        h1 {
+            font-size: 1.5em;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            cursor: pointer;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        li:hover {
+            background-color: #90EE90;
+        }
+        .icon {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Labels</h1>
+    <ul>
+        ${labelList}
+    </ul>
+    <script>
+        const vscode = acquireVsCodeApi();
+        document.querySelectorAll('li').forEach(item => {
+            item.addEventListener('click', () => {
+                const label = item.getAttribute('data-label');
+                vscode.postMessage({ command: 'gotoLabel', label });
+            });
+        });
+    </script>
+</body>
+</html>`;
+}
+function gotoLabel(editor, label) {
+    let document = editor.document;
+    if (!lastActiveEditor) {
+        document = editor.document;
+    }
+    else {
+        document = lastActiveEditor.document;
+    }
+    // Get the file name of the document
+    const fileName = path.basename(document.fileName);
+    if (!(fileName in fileDict)) {
+        return;
+    }
+    // Destructure with default values
+    let [startLine, endLine] = fileDict[fileName] || [0, document.lineCount];
+    for (let i = startLine; i < endLine; i++) {
+        const line = document.lineAt(i).text;
+        if (line.includes(label)) {
+            const position = new vscode.Position(i, line.length);
+            editor.selection = new vscode.Selection(position, position);
+            editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.AtTop);
+            // move the cursor to the end of the label
+            editor.selection = new vscode.Selection(position, position);
+            break;
+        }
+    }
 }
 function deactivate() { }
 //# sourceMappingURL=extension.js.map

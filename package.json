@@ -1,6 +1,6 @@
 {
   "name": "fanuctpp",
-  "displayName": "fanuctpp",
+  "displayName": "Fanuc Teach Pendant Programming",
   "description": "Language extension for Fanuc Teach Pendant Programming",
   "version": "0.0.1",
   "main": "./out/extension.js",
@@ -35,7 +35,8 @@
       {
         "id": "fanuctp_ls",
         "aliases": [
-          "Fanuc LS"
+          "Fanuc LS",
+          "fanuctp_ls"
         ],
         "extensions": [
           ".ls",
@@ -46,7 +47,8 @@
       {
         "id": "fanuctp_kl",
         "aliases": [
-          "Fanuc KL"
+          "Fanuc KL",
+          "fanuctp_kl"
         ],
         "extensions": [
           ".kl",
@@ -55,7 +57,12 @@
         "configuration": "./fanuc_kl_lang_config.json"
       }
     ],
-    "commands": [],
+    "commands": [
+      {
+        "command": "extension.openLabelView",
+        "title": "Open Label View"
+      }
+    ],
     "grammars": [
       {
         "language": "fanuctp_ls",
@@ -72,13 +79,11 @@
       {
         "label": "FanucLS",
         "id": "fanuctp_ls",
-        "uiTheme": "vs-dark",
         "path": "./themes/fanuctpp_ls.tmTheme.json"
       },
       {
         "label": "FanucKL",
         "id": "fanuctp_kl",
-        "uiTheme": "vs-dark",
         "path": "./themes/fanuctpp_kl.tmTheme.json"
       }
     ]
