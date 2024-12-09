@@ -79,10 +79,12 @@
       {
         "label": "FanucLS",
         "id": "fanuctp_ls",
+        "uiTheme": "vs-dark",
         "path": "./themes/fanuctpp_ls.tmTheme.json"
       },
       {
         "label": "FanucKL",
+        "uiTheme": "vs-dark",
         "id": "fanuctp_kl",
         "path": "./themes/fanuctpp_kl.tmTheme.json"
       }

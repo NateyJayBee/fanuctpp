@@ -23,6 +23,11 @@ function debounce(func: (...args: any[]) => void, wait: number) {
     };
 }
 
+// Create a decoration type for highlighting
+const highlightDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: 'rgba(211, 211, 211, 0.5)' // Light yellow background
+});
+
 export function activate(context: vscode.ExtensionContext) {
 
     console.log('Extension "fanuctpp" is now active!');
@@ -40,7 +45,6 @@ export function activate(context: vscode.ExtensionContext) {
     // Enable auto line edits
     const autoLineRenum = config.get<boolean>('autoLineRenumber', true);
     const autoSemi = config.get<boolean>('autoLineRenumber', true);
-
 
     // Set line numbers for documents that are opened
     const disposeOpen = vscode.workspace.onDidOpenTextDocument(document => {
@@ -444,6 +448,9 @@ function getWebviewContent(labels: string[]): string {
 }
 
 function gotoLabel(editor: vscode.TextEditor, label: string) {
+    //const labelRegex = new RegExp(`^\\s*(\\d{1,4}:)\\s*${label}\\s*;`);
+    label = ":  " + label;
+
     let document = editor.document;
     if (!lastActiveEditor) {
         document = editor.document;
@@ -461,14 +468,22 @@ function gotoLabel(editor: vscode.TextEditor, label: string) {
     // Destructure with default values
     let [startLine, endLine] = fileDict[fileName] || [0, document.lineCount];
 
-    for (let i = startLine; i < endLine; i++) {
+    for (let i = startLine; i < endLine+1; i++) {
         const line = document.lineAt(i).text;
         if (line.includes(label)) {
             const position = new vscode.Position(i, line.length);
             editor.selection = new vscode.Selection(position, position);
             editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.AtTop);
-            // move the cursor to the end of the label
-            editor.selection = new vscode.Selection(position, position);
+
+            // Apply the highlight decoration
+            const range = new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, line.length));
+            editor.setDecorations(highlightDecorationType, [range]);
+
+            // Remove the highlight decoration after a short delay
+            setTimeout(() => {
+                editor.setDecorations(highlightDecorationType, []);
+            }, 1000); // Highlight for 1 second
+
 
             break;
         }
