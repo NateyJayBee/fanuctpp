@@ -12,7 +12,7 @@ Themed syntax for (.ls) files. Each of the following syntaxes has its own colori
 - Constant language keywords:
     - UTOOL_NUM, UFRAME_NUM, UTOOL, UFRAME, OVERRIDE, RSR, UALM, PAYLOAD, TIMER, DI, DO, GI, GO, RI, RO, UI, UO, SI, SO, SPI, SPO, SSI, SSO, CSI, CSO, AR, SR, GO, F, M, PR, UF, UT, CONFIG, X, Y, Z, W, P, R
 - Move types:
-    - CNT, FINE
+    - CNT, FINE, ACC(\d{1,3})
 - I/O signals:
     - ON, OFF
 - Header section:

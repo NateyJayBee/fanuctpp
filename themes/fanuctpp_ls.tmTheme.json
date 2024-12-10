@@ -1,6 +1,6 @@
 {
     "name": "Fanuc LS Theme",
-    "type": "vs-dark",
+    "type": "dark",
     "colors": {
       "editor.foreground": "#ffffff",
       "editor.background": "#1e1e1e"

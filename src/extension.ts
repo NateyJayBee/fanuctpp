@@ -4,8 +4,8 @@ import * as path from 'path';
 // GLOBAL VARIABLES
 
 // fileDict 1 entry per document
-// start line,  end line,  line edits enabled,  total lines,  edit lines
-let fileDict: { [key: string]: [number, number, boolean, number, number] } = {};
+// start line,  end line,  line edits enabled,  total lines,  edit lines, labels, jumps
+let fileDict: { [fileName: string]: [number, number, boolean, number, number] } = {};
 
 let panel: vscode.WebviewPanel | undefined;
 let lastActiveEditor: vscode.TextEditor | undefined;
@@ -81,17 +81,15 @@ export function activate(context: vscode.ExtensionContext) {
     const disposeDebounceChange = vscode.workspace.onDidChangeTextDocument(debouncedOnDidChangeTextDocument)
 
     // ------------------COMMANDS-------------------
-    // Register the standalone command
-    //const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', async () => {
-    //    const editor = vscode.window.activeTextEditor;
-    //    if (editor && editor.document.languageId === 'fanuctp_ls') {
-    //        const lineCreated = false;
-    //        const lineDeleted = false;
-    //        await updateLineNumbers(editor.document, lineNumber, lineCreated, lineDeleted, true, false);
-    //    }
-    //});
+    // STANDALONE UPDATE LINE NUMBERS
+    const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', async (event: vscode.TextDocumentChangeEvent) => {
+        const editor = vscode.window.activeTextEditor;
+        if (editor && editor.document.languageId === 'fanuctp_ls') {
+            await updateLineNumbers(event.document, true, true);
+        }
+    });
 
-    // Register the command to open the webview
+    // WEBVIEW LABEL VIEW
     const disposeLabelWindow = vscode.commands.registerCommand('extension.openLabelView', () => {
         let editor = vscode.window.activeTextEditor;
         if (!editor) {
@@ -101,6 +99,7 @@ export function activate(context: vscode.ExtensionContext) {
         lastActiveEditor = editor;
         const document = editor.document;
         const labels = extractLabels(document);
+        const jumps = extractJumps(document, labels);
 
         panel = vscode.window.createWebviewPanel(
             'labelView', // Identifies the type of the webview. Used internally
@@ -112,7 +111,7 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
         // Set the HTML content
-        panel.webview.html = getWebviewContent(labels);
+        panel.webview.html = getWebviewContent(document, labels, jumps);
 
         // Handle messages from the webview
         panel.webview.onDidReceiveMessage(
@@ -125,8 +124,15 @@ export function activate(context: vscode.ExtensionContext) {
                             gotoLabel(lastActiveEditor, label);
                         }
                         return;
-                }
-            },
+                    case 'gotoJumpLabel':
+                        const jump = message.jump;
+                        editor = vscode.window.activeTextEditor;
+                        if (lastActiveEditor) {
+                            gotoJumpLabel(lastActiveEditor, jump);
+                        }
+                        return;
+                    }
+                },
             undefined,
             context.subscriptions
         );
@@ -144,10 +150,11 @@ export function activate(context: vscode.ExtensionContext) {
             console.log('active: active editor changed');
             const document = editor.document;
             const labels = extractLabels(document);
+            const jumps = extractJumps(document, labels);
 
             // Update the Webview content
             if (panel) {
-                panel.webview.html = getWebviewContent(labels);
+                panel.webview.html = getWebviewContent(document, labels, jumps);
 
                 // Re-register the message handler for the new editor
                 panel.webview.onDidReceiveMessage(
@@ -155,8 +162,16 @@ export function activate(context: vscode.ExtensionContext) {
                         switch (message.command) {
                             case 'gotoLabel':
                                 const label = message.label;
+                                editor = vscode.window.activeTextEditor;
                                 if (lastActiveEditor) {
                                     gotoLabel(lastActiveEditor, label);
+                                }
+                                return;
+                            case 'gotoJumpLabel':
+                                const jump = message.jump;
+                                editor = vscode.window.activeTextEditor;
+                                if (lastActiveEditor) {
+                                    gotoJumpLabel(lastActiveEditor, jump);
                                 }
                                 return;
                         }
@@ -362,6 +377,11 @@ async function setLineNumbers(document: vscode.TextDocument) {
 }
 
 
+function extractNumberFromLabel(label: string): string {
+    const match = label.match(/\[(\d+)(?::[^\]]+)?\]/);
+    return match ? match[1] : '';
+}
+
 // Label extraction
 function extractLabels(document: vscode.TextDocument): string[] {
     const labelRegex = /^\s*(\d{1,4}:)\s*LBL\[\d+(?::[^\]]+)?\]/g;
@@ -390,65 +410,40 @@ function extractLabels(document: vscode.TextDocument): string[] {
     return labels;
 }
 
+// Jump extraction
+function extractJumps(document: vscode.TextDocument, labels: string[]): { [label: string]: string[] }  {
+    const jumpRegex = /JMP\s*LBL\[(\d*)\]/g;
+    const jumps: { [label: string]: string[] } = {};
 
-function getWebviewContent(labels: string[]): string {
-    const labelList = labels.map(label => `<li data-label="${label}"><span class="icon">🔖</span>${label}</li>`).join('');
-    return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Label View</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 10px;
-        }
-        h1 {
-            font-size: 1.5em;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            cursor: pointer;
-            padding: 10px;
-            border: 1px solid #ddd;
-            margin-bottom: 5px;
-            display: flex;
-            align-items: center;
-        }
-        li:hover {
-            background-color: #90EE90;
-        }
-        .icon {
-            margin-right: 10px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Labels</h1>
-    <ul>
-        ${labelList}
-    </ul>
-    <script>
-        const vscode = acquireVsCodeApi();
-        document.querySelectorAll('li').forEach(item => {
-            item.addEventListener('click', () => {
-                const label = item.getAttribute('data-label');
-                vscode.postMessage({ command: 'gotoLabel', label });
+    // Get the file name of the document
+    const fileName = path.basename(document.fileName);
+    if (!(fileName in fileDict)) {
+        return {};
+    }
+
+    // Destructure with default values
+    let [startLine, endLine] = fileDict[fileName] || [0, document.lineCount];
+
+    for (let i = startLine; i < endLine + 1; i++) {
+        const line = document.lineAt(i).text;
+        const matches = line.match(jumpRegex);
+        if (matches) {
+            matches.forEach(match => {
+                let label = match.slice(7).trim();
+                label = extractNumberFromLabel(label);
+                if (!(label in jumps)) {
+                    jumps[label] = [];
+                }
+                jumps[label].push("JMP LBL on Line:   " + (i - startLine + 1).toString());
             });
-        });
-    </script>
-</body>
-</html>`;
+        }
+    }
+
+    return jumps;
 }
 
+
 function gotoLabel(editor: vscode.TextEditor, label: string) {
-    //const labelRegex = new RegExp(`^\\s*(\\d{1,4}:)\\s*${label}\\s*;`);
     label = ":  " + label;
 
     let document = editor.document;
@@ -472,8 +467,22 @@ function gotoLabel(editor: vscode.TextEditor, label: string) {
         const line = document.lineAt(i).text;
         if (line.includes(label)) {
             const position = new vscode.Position(i, line.length);
+
+            // Check if the target line is within the visible range
+            const visibleRanges = editor.visibleRanges;
+            let isVisible = false;
+            for (const range of visibleRanges) {
+                if (range.contains(position)) {
+                    isVisible = true;
+                    break;
+                }
+            }
+
+            // Set the selection and reveal the range if not visible
             editor.selection = new vscode.Selection(position, position);
-            editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.AtTop);
+            if (!isVisible) {
+                editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.AtTop);
+            }
 
             // Apply the highlight decoration
             const range = new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, line.length));
@@ -482,12 +491,170 @@ function gotoLabel(editor: vscode.TextEditor, label: string) {
             // Remove the highlight decoration after a short delay
             setTimeout(() => {
                 editor.setDecorations(highlightDecorationType, []);
-            }, 1000); // Highlight for 1 second
-
+            }, 500); // Highlight for 1 second
 
             break;
         }
     }
 }
+
+function gotoJumpLabel(editor: vscode.TextEditor, jump: string) {
+    // Extract the jump number from the jump string
+    const jumpNum = parseInt(jump.slice(19), 10);
+
+    let document = editor.document;
+    if (!lastActiveEditor) {
+        document = editor.document;
+    } else {
+        document = lastActiveEditor.document;
+    }
+
+    // Get the file name of the document
+    const fileName = path.basename(document.fileName);
+    if (!(fileName in fileDict)) {
+        return;
+    }
+
+    // Destructure with default values
+    let [startLine, endLine] = fileDict[fileName] || [0, document.lineCount];
+
+    // Calculate the target line number
+    const targetLine = jumpNum + startLine - 1;
+
+    // Ensure the target line is within the document's line count
+    if (targetLine >= document.lineCount) {
+        return;
+    }
+
+    // Create a position at the start of the target line
+    const position = new vscode.Position(targetLine, 0);
+
+    // Check if the target line is within the visible range
+    const visibleRanges = editor.visibleRanges;
+    let isVisible = false;
+    for (const range of visibleRanges) {
+        if (range.contains(position)) {
+            isVisible = true;
+            break;
+        }
+    }
+
+    // Set the selection and reveal the range if not visible
+    editor.selection = new vscode.Selection(position, position);
+    if (!isVisible) {
+        editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.AtTop);
+    }
+
+    // Apply the highlight decoration
+    const range = new vscode.Range(position, new vscode.Position(targetLine, document.lineAt(targetLine).text.length));
+    editor.setDecorations(highlightDecorationType, [range]);
+
+    // Remove the highlight decoration after a short delay
+    setTimeout(() => {
+        editor.setDecorations(highlightDecorationType, []);
+    }, 500); // Highlight for 1 second
+}
+
+
+
+function getWebviewContent(document: vscode.TextDocument, labels: string[], jumps: { [label: string]: string[] }): string {
+
+    // Get the file name of the document
+    const fileName = path.basename(document.fileName);
+    if (!(fileName in fileDict)) {
+         return `<!DOCTYPE html>
+    <html lang="en">
+    </html>`;
+    }
+
+    const labelList = labels.map(label => {
+        const labelNumber = extractNumberFromLabel(label);
+        const jumpLines = (jumps[labelNumber] || []).map(jump => `<p class="jump-text" data-jump="${jump}">${jump}</p>`).join('');
+        return `
+        <li data-label="${label}">
+            <div class="label-container">
+                <span class="icon">🏷️</span>
+                <div class="label-text">
+                    <p>${label}</p>
+                    ${jumpLines}
+                </div>
+            </div>
+        </li>
+    `;
+    }).join('');
+    return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Label View</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.5em;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 10px;
+            }
+            ul {
+                list-style-type: none;
+                padding: 0;
+            }
+            li {
+                cursor: pointer;
+                padding: 10px;
+                border: 1px solid #ddd;
+                display: flex;
+                align-items: center;
+            }
+            li:hover {
+                background-color: #000000;
+            }
+            .icon {
+                font-size: 1.5em;
+                margin-right: 10px;
+            }
+            .label-container {
+                display: flex;
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            .label-text {
+                margin: 0;
+            }
+            .jump-text {
+                margin: 0;
+                padding-left: 20px;
+                color: #808080; /* Grey color for jumps */
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Labels</h1>
+        <ul>
+            ${labelList}
+        </ul>
+        <script>
+            const vscode = acquireVsCodeApi();
+            document.querySelectorAll('li').forEach(item => {
+                item.addEventListener('click', () => {
+                    const label = item.getAttribute('data-label');
+                    vscode.postMessage({ command: 'gotoLabel', label });
+                });
+            });
+            document.querySelectorAll('.jump-text').forEach(item => {
+                item.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const jump = item.getAttribute('data-jump');
+                    vscode.postMessage({ command: 'gotoJumpLabel', jump });
+                });
+            });
+        </script>
+    </body>
+    </html>`;
+}
+
 
 export function deactivate() {}
