@@ -1,7 +1,7 @@
 {
   "name": "fanuctpp",
-  "displayName": "Fanuc Teach Pendant Programming",
-  "description": "Language extension for Fanuc Teach Pendant Programming",
+  "displayName": "Advanced Fanuc TP",
+  "description": "Advanced Language extension for Fanuc Teach Pendant Programming",
   "version": "0.0.1",
   "main": "./out/extension.js",
   "scripts": {

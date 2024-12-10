@@ -1,6 +1,6 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "Fanuc Teach Pendant Programming",
+	"name": "Fanuc LS Language",
 	"scopeName": "source.fanuctp_ls",
 	"patterns": [
 		{
