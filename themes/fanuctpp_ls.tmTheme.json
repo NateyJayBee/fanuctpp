@@ -13,6 +13,12 @@
         }
       },
       {
+        "scope": "keyword.adv_control.fanuctp_ls",
+        "settings": {
+          "foreground": "#cf7896"
+        }
+      },
+      {
         "scope": "keyword.remark.fanuctp_ls",
         "settings": {
           "foreground": "#FF5151",

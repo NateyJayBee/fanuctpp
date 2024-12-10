@@ -213,7 +213,7 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
             return;
         }
         const text = document.getText();
-        const lines = text.split('\r\n');
+        const lines = text.split(/\r?\n/);
         let tpLines = lines.slice(startLine, endLine - 1);
         // Line with only whitespace
         const blankLineRegex = /^\s*[\r\n]?$/;
@@ -235,6 +235,8 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
             isAutoUpd = true;
             //console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
             // Iterate over each line in the document
+            // TODO could be optimized but hasnt shown signs of lag
+            // Attempted tracking line created or deleted was slower
             for (let i = 0; i < tpLines.length && i <= endLine - 1; i++) {
                 let lineText = tpLines[i];
                 // Check if the line is blank
@@ -303,6 +305,7 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
 function setLineNumbers(document) {
     return __awaiter(this, void 0, void 0, function* () {
         const fileName = path.basename(document.fileName);
+        // Have not seen LS file w/o these
         const posEndRegex = /\/POS/;
         const endRegex = /\/END/;
         const headerEndRegex = /\/MN/;

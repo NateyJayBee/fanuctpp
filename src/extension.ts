@@ -227,7 +227,7 @@ async function updateLineNumbers(document: vscode.TextDocument, autoLineRenum: b
     }
 
     const text = document.getText();
-    const lines = text.split('\r\n');
+    const lines = text.split(/\r?\n/);
 
     let tpLines = lines.slice(startLine, endLine-1);
 
@@ -252,6 +252,8 @@ async function updateLineNumbers(document: vscode.TextDocument, autoLineRenum: b
         isAutoUpd = true;
         //console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
         // Iterate over each line in the document
+        // TODO could be optimized but hasnt shown signs of lag
+        // Attempted tracking line created or deleted was slower
         for (let i = 0; i < tpLines.length && i <= endLine-1; i++) {
 
             let lineText = tpLines[i];
@@ -329,6 +331,7 @@ async function updateLineNumbers(document: vscode.TextDocument, autoLineRenum: b
 async function setLineNumbers(document: vscode.TextDocument) {
     const fileName = path.basename(document.fileName);
 
+    // Have not seen LS file w/o these
     const posEndRegex = /\/POS/;
     const endRegex = /\/END/;
     const headerEndRegex = /\/MN/;
