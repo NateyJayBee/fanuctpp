@@ -7,11 +7,13 @@ import * as path from 'path';
 // start line,  end line,  line edits enabled,  total lines,  edit lines, labels, jumps
 let fileDict: { [fileName: string]: [number, number, boolean, number, number] } = {};
 
+// Panel for label webview
 let panel: vscode.WebviewPanel | undefined;
+
+// Last editor to track switching editors and keeping code in sync
 let lastActiveEditor: vscode.TextEditor | undefined;
 
 let isAutoUpd = false;
-let skipSelectionChange = false;
 let lineNumber: number = 0;
 
 // Debounce function to delay execution
@@ -25,7 +27,7 @@ function debounce(func: (...args: any[]) => void, wait: number) {
 
 // Create a decoration type for highlighting
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: 'rgba(211, 211, 211, 0.5)' // Light yellow background
+    backgroundColor: 'rgba(211, 211, 211, 0.5)'
 });
 
 export function activate(context: vscode.ExtensionContext) {
@@ -56,14 +58,10 @@ export function activate(context: vscode.ExtensionContext) {
     // Debounced handler for text document changes
     const debouncedOnDidChangeTextDocument = debounce(async (event: vscode.TextDocumentChangeEvent) => { 
         if (isAutoUpd) {
-            console.log('doc: automatic change, skipping handler');
             return;
         }
-        console.log('doc: debouncedOnDidChangeTextDocument');
 
         setLineNumbers(event.document);
-
-        //console.log('manual change, using handler');
 
         if (event.document.languageId === 'fanuctp_ls') {
             const lineCreated = event.contentChanges.some(change => change.text.includes('\n'));
@@ -102,11 +100,11 @@ export function activate(context: vscode.ExtensionContext) {
         const jumps = extractJumps(document, labels);
 
         panel = vscode.window.createWebviewPanel(
-            'labelView', // Identifies the type of the webview. Used internally
-            'Label View', // Title of the panel displayed to the user
-            vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
+            'labelView',
+            'Label View',
+            vscode.ViewColumn.Beside, 
             {
-                enableScripts: true // Enable scripts in the webview
+                enableScripts: true 
             }
         );
 
@@ -252,7 +250,7 @@ async function updateLineNumbers(document: vscode.TextDocument, autoLineRenum: b
     let diff = Math.abs(totalLines - processedLines);
     if (diff >= 1) {
         isAutoUpd = true;
-        console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
+        //console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
         // Iterate over each line in the document
         for (let i = 0; i < tpLines.length && i <= endLine-1; i++) {
 
@@ -263,7 +261,6 @@ async function updateLineNumbers(document: vscode.TextDocument, autoLineRenum: b
                 lineText = (i + 1).toString().padStart(4, ' ') + ":   ;";
             }
             else if (betweenSemiRegex.test(lineText)) {
-                //lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5).replace(betweenSemiRegex, '$2;');
                 const match = lineText.match(betweenSemiRegex);
                 if (match) {
                     let content = match[2].trim();
@@ -309,7 +306,7 @@ async function updateLineNumbers(document: vscode.TextDocument, autoLineRenum: b
         
         await vscode.workspace.applyEdit(edit);
         isAutoUpd = false;
-        console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
+        //console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
 
         // move the cursor to the normal TP start column
         const column = 7; 
@@ -347,14 +344,15 @@ async function setLineNumbers(document: vscode.TextDocument) {
         const line = document.lineAt(i).text;
 
         if (headerEndRegex.test(line)) {
-            tpLineStart = i + 1; // Line numbers are 1-based
+            tpLineStart = i + 1;
             headExists = true;
         }
 
         if (posEndRegex.test(line)) {
             tpLineEnd = i + 1;
             posExists = true;
-            break; // Stop searching if posEndRegex is found
+            // Stop searching if posEndRegex is found
+            break;
         }
 
         if (!posExists && endRegex.test(line)) {
@@ -373,7 +371,7 @@ async function setLineNumbers(document: vscode.TextDocument) {
     }
     
     //console.log(`set: Setting line numbers for ${fileName}`);
-    console.log('set: ' + JSON.stringify(fileDict[fileName]));
+    //console.log('set: ' + JSON.stringify(fileDict[fileName]));
 }
 
 
@@ -491,7 +489,7 @@ function gotoLabel(editor: vscode.TextEditor, label: string) {
             // Remove the highlight decoration after a short delay
             setTimeout(() => {
                 editor.setDecorations(highlightDecorationType, []);
-            }, 500); // Highlight for 1 second
+            }, 500);
 
             break;
         }
@@ -552,7 +550,7 @@ function gotoJumpLabel(editor: vscode.TextEditor, jump: string) {
     // Remove the highlight decoration after a short delay
     setTimeout(() => {
         editor.setDecorations(highlightDecorationType, []);
-    }, 500); // Highlight for 1 second
+    }, 500);
 }
 
 

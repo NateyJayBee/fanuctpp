@@ -15,23 +15,13 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -50,10 +40,11 @@ const path = __importStar(require("path"));
 // fileDict 1 entry per document
 // start line,  end line,  line edits enabled,  total lines,  edit lines, labels, jumps
 let fileDict = {};
+// Panel for label webview
 let panel;
+// Last editor to track switching editors and keeping code in sync
 let lastActiveEditor;
 let isAutoUpd = false;
-let skipSelectionChange = false;
 let lineNumber = 0;
 // Debounce function to delay execution
 function debounce(func, wait) {
@@ -65,7 +56,7 @@ function debounce(func, wait) {
 }
 // Create a decoration type for highlighting
 const highlightDecorationType = vscode.window.createTextEditorDecorationType({
-    backgroundColor: 'rgba(211, 211, 211, 0.5)' // Light yellow background
+    backgroundColor: 'rgba(211, 211, 211, 0.5)'
 });
 function activate(context) {
     console.log('Extension "fanuctpp" is now active!');
@@ -90,12 +81,9 @@ function activate(context) {
     // Debounced handler for text document changes
     const debouncedOnDidChangeTextDocument = debounce((event) => __awaiter(this, void 0, void 0, function* () {
         if (isAutoUpd) {
-            console.log('doc: automatic change, skipping handler');
             return;
         }
-        console.log('doc: debouncedOnDidChangeTextDocument');
         setLineNumbers(event.document);
-        //console.log('manual change, using handler');
         if (event.document.languageId === 'fanuctp_ls') {
             const lineCreated = event.contentChanges.some(change => change.text.includes('\n'));
             //const lineDeleted = event.contentChanges.some(change => change.rangeLength > 0 && change.text === '');
@@ -127,11 +115,8 @@ function activate(context) {
         const document = editor.document;
         const labels = extractLabels(document);
         const jumps = extractJumps(document, labels);
-        panel = vscode.window.createWebviewPanel('labelView', // Identifies the type of the webview. Used internally
-        'Label View', // Title of the panel displayed to the user
-        vscode.ViewColumn.Beside, // Editor column to show the new webview panel in.
-        {
-            enableScripts: true // Enable scripts in the webview
+        panel = vscode.window.createWebviewPanel('labelView', 'Label View', vscode.ViewColumn.Beside, {
+            enableScripts: true
         });
         // Set the HTML content
         panel.webview.html = getWebviewContent(document, labels, jumps);
@@ -248,7 +233,7 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
         let diff = Math.abs(totalLines - processedLines);
         if (diff >= 1) {
             isAutoUpd = true;
-            console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
+            //console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
             // Iterate over each line in the document
             for (let i = 0; i < tpLines.length && i <= endLine - 1; i++) {
                 let lineText = tpLines[i];
@@ -257,7 +242,6 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
                     lineText = (i + 1).toString().padStart(4, ' ') + ":   ;";
                 }
                 else if (betweenSemiRegex.test(lineText)) {
-                    //lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5).replace(betweenSemiRegex, '$2;');
                     const match = lineText.match(betweenSemiRegex);
                     if (match) {
                         let content = match[2].trim();
@@ -299,7 +283,7 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
             edit.set(uri, edits);
             yield vscode.workspace.applyEdit(edit);
             isAutoUpd = false;
-            console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
+            //console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
             // move the cursor to the normal TP start column
             const column = 7;
             const position = new vscode.Position(lineNumber - 1, column);
@@ -331,13 +315,14 @@ function setLineNumbers(document) {
         for (let i = 0; i < document.lineCount; i++) {
             const line = document.lineAt(i).text;
             if (headerEndRegex.test(line)) {
-                tpLineStart = i + 1; // Line numbers are 1-based
+                tpLineStart = i + 1;
                 headExists = true;
             }
             if (posEndRegex.test(line)) {
                 tpLineEnd = i + 1;
                 posExists = true;
-                break; // Stop searching if posEndRegex is found
+                // Stop searching if posEndRegex is found
+                break;
             }
             if (!posExists && endRegex.test(line)) {
                 tpLineEnd = i + 1;
@@ -354,7 +339,7 @@ function setLineNumbers(document) {
             fileDict[fileName][3] = document.lineCount;
         }
         //console.log(`set: Setting line numbers for ${fileName}`);
-        console.log('set: ' + JSON.stringify(fileDict[fileName]));
+        //console.log('set: ' + JSON.stringify(fileDict[fileName]));
     });
 }
 function extractNumberFromLabel(label) {
@@ -450,7 +435,7 @@ function gotoLabel(editor, label) {
             // Remove the highlight decoration after a short delay
             setTimeout(() => {
                 editor.setDecorations(highlightDecorationType, []);
-            }, 500); // Highlight for 1 second
+            }, 500);
             break;
         }
     }
@@ -500,7 +485,7 @@ function gotoJumpLabel(editor, jump) {
     // Remove the highlight decoration after a short delay
     setTimeout(() => {
         editor.setDecorations(highlightDecorationType, []);
-    }, 500); // Highlight for 1 second
+    }, 500);
 }
 function getWebviewContent(document, labels, jumps) {
     // Get the file name of the document
