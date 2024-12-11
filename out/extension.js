@@ -238,50 +238,54 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
             //console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
             // Boolean to check if current line is a continuation of previous
             let doubleLineCnt = 0;
+            // new line made on position
+            let movedPosition = false;
             // Iterate over each line in the document
             // TODO could be optimized but hasnt shown signs of lag
             // Attempted tracking line created or deleted was slower
             for (let i = 0; i < tpLines.length && i <= endLine - 1; i++) {
                 let lineText = tpLines[i];
+                let tpLineNum = i + 1 - doubleLineCnt;
+                let tpLineText = tpLineNum.toString().padStart(4, ' ');
                 // Check if the line is blank
                 if (contLineRegex.test(lineText)) {
                     doubleLineCnt++;
                     continue;
                 }
                 if (blankLineRegex.test(lineText)) {
-                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":   ;";
+                    lineText = tpLineText + ":   ;";
                 }
                 else if (betweenSemiRegex.test(lineText)) {
                     const match = lineText.match(betweenSemiRegex);
                     if (match) {
                         let content = match[2].trim();
+                        // Handle lines starting with "J " or "L "
                         if (content.startsWith("J ") || content.startsWith("L ")) {
-                            // Handle lines starting with "J " or "L "
-                            lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + content + ' ;';
+                            lineText = tpLineText + ":" + content + ' ;';
                         }
                         else {
-                            lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":  " + content + ' ;';
+                            lineText = tpLineText + ":  " + content + ' ;';
                         }
                     }
                 }
                 else if (noSemiNumRegex.test(lineText)) {
-                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + lineText.slice(5).trimEnd() + '   ;';
+                    lineText = tpLineText + ":" + lineText.slice(5).trimEnd() + '   ;';
                 }
                 else if (onlySemiRegex.test(lineText)) {
-                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":   ;";
+                    lineText = tpLineText + ":   ;";
                 }
                 else if (twoSemiEndRegex.test(lineText)) {
-                    //lineText = (i + 1).toString().padStart(4, ' ') + ":" + "   ;";
-                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');
+                    lineText = tpLineText + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');
                 }
                 else if (lineNumRegex.test(lineText)) {
-                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + lineText.slice(5);
+                    lineText = tpLineText + ":" + lineText.slice(5);
                 }
                 else if (moveRegex.test(lineText)) {
-                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + lineText.trimStart();
+                    lineText = tpLineText + ":" + lineText.trimStart();
+                    movedPosition = true;
                 }
                 else {
-                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":  " + lineText.trimStart();
+                    lineText = tpLineText + ":  " + lineText.trimStart();
                 }
                 // Push the edit
                 const lineLength = document.lineAt(startLine + i).text.length;
@@ -295,7 +299,10 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
             isAutoUpd = false;
             //console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
             // move the cursor to the normal TP start column
-            const column = 7;
+            let column = 7;
+            if (movedPosition) {
+                column = 5;
+            }
             const position = new vscode.Position(lineNumber - 1, column);
             editor.selection = new vscode.Selection(position, position);
         }
