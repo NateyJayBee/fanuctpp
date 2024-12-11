@@ -229,19 +229,27 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
         const betweenSemiRegex = /^\s*(\d{1,4}):\s*;([^;]*);$/;
         // Lines with movements
         const moveRegex = /(^\s*(\d{1,4}):|\s+)\s*[JL]\s/;
+        // Line with comma at end, code taking up 2 lines
+        const contLineRegex = /^\s\s\s\s:/;
         // SKIPPED LINES
         let diff = Math.abs(totalLines - processedLines);
         if (diff >= 1) {
             isAutoUpd = true;
             //console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
+            // Boolean to check if current line is a continuation of previous
+            let doubleLineCnt = 0;
             // Iterate over each line in the document
             // TODO could be optimized but hasnt shown signs of lag
             // Attempted tracking line created or deleted was slower
             for (let i = 0; i < tpLines.length && i <= endLine - 1; i++) {
                 let lineText = tpLines[i];
                 // Check if the line is blank
+                if (contLineRegex.test(lineText)) {
+                    doubleLineCnt++;
+                    continue;
+                }
                 if (blankLineRegex.test(lineText)) {
-                    lineText = (i + 1).toString().padStart(4, ' ') + ":   ;";
+                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":   ;";
                 }
                 else if (betweenSemiRegex.test(lineText)) {
                     const match = lineText.match(betweenSemiRegex);
@@ -249,31 +257,31 @@ function updateLineNumbers(document, autoLineRenum, autoSemi) {
                         let content = match[2].trim();
                         if (content.startsWith("J ") || content.startsWith("L ")) {
                             // Handle lines starting with "J " or "L "
-                            lineText = (i + 1).toString().padStart(4, ' ') + ":" + content + ' ;';
+                            lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + content + ' ;';
                         }
                         else {
-                            lineText = (i + 1).toString().padStart(4, ' ') + ":  " + content + ' ;';
+                            lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":  " + content + ' ;';
                         }
                     }
                 }
                 else if (noSemiNumRegex.test(lineText)) {
-                    lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5).trimEnd() + '   ;';
+                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + lineText.slice(5).trimEnd() + '   ;';
                 }
                 else if (onlySemiRegex.test(lineText)) {
-                    lineText = (i + 1).toString().padStart(4, ' ') + ":   ;";
+                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":   ;";
                 }
                 else if (twoSemiEndRegex.test(lineText)) {
                     //lineText = (i + 1).toString().padStart(4, ' ') + ":" + "   ;";
-                    lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');
+                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');
                 }
                 else if (lineNumRegex.test(lineText)) {
-                    lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.slice(5);
+                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + lineText.slice(5);
                 }
                 else if (moveRegex.test(lineText)) {
-                    lineText = (i + 1).toString().padStart(4, ' ') + ":" + lineText.trimStart();
+                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":" + lineText.trimStart();
                 }
                 else {
-                    lineText = (i + 1).toString().padStart(4, ' ') + ":  " + lineText.trimStart();
+                    lineText = (i + 1 - doubleLineCnt).toString().padStart(4, ' ') + ":  " + lineText.trimStart();
                 }
                 // Push the edit
                 const lineLength = document.lineAt(startLine + i).text.length;
