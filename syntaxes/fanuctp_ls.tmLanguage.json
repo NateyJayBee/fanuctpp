@@ -23,7 +23,11 @@
 				{
 					"name": "constant.numeric.fanuctp_ls",
 					"match": "\\b\\d+\\.?\\d*\\b"
-				},				
+				},
+				{
+					"name": "constant.names.fanuctp_ls",
+					"match": "(?<=:\\s*[^:]*:)([^:\\]]+)(?=\\])"
+				},			
 				{
 					"name": "constant.language.fanuctp_ls",
 					"match": "\\b(UTOOL_NUM|UFRAME_NUM|UTOOL|UFRAME|OVERRIDE|RSR|UALM|PAYLOAD|TIMER|DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|PR|VR|UF|UT|CONFIG|X|Y|Z|W|P|R|U|T|N)\\b"

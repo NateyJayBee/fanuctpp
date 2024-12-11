@@ -109,6 +109,12 @@
         "settings": {
             "foreground": "#ffff80"
         }
+      },
+      {
+        "scope": "constant.names.fanuctp_ls",
+        "settings": {
+            "foreground": "#FFFFFF"
+        }
       }
     ]
   }
