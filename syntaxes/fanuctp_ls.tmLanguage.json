@@ -4,16 +4,32 @@
 	"scopeName": "source.fanuctp_ls",
 	"patterns": [
 		{
-			"include": "#keywords"
+			"include": "#constants"
 		},
 		{
-			"include": "#constants"
+			"include": "#keywords"
 		},
 		{
 			"include": "#strings"
 		}
 	],
 	"repository": {
+		"constants": {
+			"patterns": [	
+				{
+					"name": "constant.newline.fanuctp_ls",
+					"match": "^\\s*(\\d{1,4}):"
+				},				
+				{
+					"name": "constant.numeric.fanuctp_ls",
+					"match": "\\b\\d+\\.?\\d*\\b"
+				},				
+				{
+					"name": "constant.language.fanuctp_ls",
+					"match": "\\b(UTOOL_NUM|UFRAME_NUM|UTOOL|UFRAME|OVERRIDE|RSR|UALM|PAYLOAD|TIMER|DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|PR|VR|UF|UT|CONFIG|X|Y|Z|W|P|R|U|T|N)\\b"
+				}
+			]
+		},
 		"keywords": {
 			"patterns": [
 				{
@@ -46,12 +62,23 @@
 				},
 				{
 					"name": "keyword.headerspace.fanuctp_ls",
-					"begin": "/APPL",
-					"end": "/MN"
+					"begin": "/PROG",
+					"end": "/MN",
+					"patterns": [
+						{
+							"include": "#constants"
+						},
+						{
+							"include": "#keywords"
+						},
+						{
+							"include": "#strings"
+						}
+					]
 				},
 				{
 					"name": "keyword.header.fanuctp_ls",
-					"match": "(\\b|\\/)(PROG|ATTR|APPL|MN|POS|END|Macro|MNEDITOR|DATE|TIME|READ|READ_WRITE|OWNER|COMMENT|PROG_SIZE|CREATE|MODIFIED|FILE_NAME|VERSION|LINE_COUNT|MEMORY_SIZE|PROTECT|TCD|STACK_SIZE|TASK_PRIORITY|TIME_SLICE|BUSY_LAMP_OFF|ABORT_REQUEST|PAUSE_REQUEST|DEFAULT_GROUP|CONTROL_CODE|LOCAL_REGISTERS)(\\b|\\.)"
+					"match": "(\\b|\\/)(PROG|ATTR|APPL|MN|POS|END|Macro|MNEDITOR|DATE|TIME|READ|READ_WRITE|OWNER|COMMENT|PROG_SIZE|CREATE|MODIFIED|FILE_NAME|VERSION|LINE_COUNT|MEMORY_SIZE|PROTECT|TCD|STACK_SIZE|TASK_PRIORITY|TIME_SLICE|BUSY_LAMP_OFF|ABORT_REQUEST|PAUSE_REQUEST|DEFAULT_GROUP|CONTROL_CODE|LOCAL_REGISTERS|STORAGE|SHADOW)(\\b|\\.)"
 				},
 				{
 					"name": "keyword.operator.fanuctp_ls",
@@ -64,22 +91,6 @@
 				{
 					"name": "keyword.variable.fanuctp_ls",
 					"match": "\\$\\w+"
-				}
-			]
-		},
-		"constants": {
-			"patterns": [					
-				{
-					"name": "constant.numeric.fanuctp_ls",
-					"match": "\\b\\d+\\.?\\d*\\b"
-				},				
-				{
-					"name": "constant.language.fanuctp_ls",
-					"match": "\\b(UTOOL_NUM|UFRAME_NUM|UTOOL|UFRAME|OVERRIDE|RSR|UALM|PAYLOAD|TIMER|DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|PR|VR|UF|UT|CONFIG|X|Y|Z|W|P|R|U|T|N)\\b"
-				},
-				{
-					"name": "constant.newline.fanuctp_ls",
-					"match": "^\\s*\\d{1,4}:"
 				}
 			]
 		},
