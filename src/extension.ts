@@ -70,7 +70,6 @@ export function activate(context: vscode.ExtensionContext) {
     const config = vscode.workspace.getConfiguration('fanuctpp');
     // Enable auto line edits
     const autoLineRenum = config.get<boolean>('autoLineRenumber', true);
-    const autoSemi = config.get<boolean>('autoLineRenumber', true);
 
     // Set line numbers for documents that are opened
     const disposeOpen = vscode.workspace.onDidOpenTextDocument(document => {
@@ -87,16 +86,8 @@ export function activate(context: vscode.ExtensionContext) {
 
         setLineNumbers(event.document);
 
-        if (event.document.languageId === 'fanuctp_ls') {
-            const lineCreated = event.contentChanges.some(change => change.text.includes('\n'));
-            //const lineDeleted = event.contentChanges.some(change => change.rangeLength > 0 && change.text === '');
-            const lineDeleted = event.contentChanges.some(change => {
-                const startLine = change.range.start.line;
-                const endLine = change.range.end.line;
-                const isWholeLineDeleted = change.range.start.character === 0 && change.range.end.character === 0 && startLine !== endLine;
-                return change.rangeLength > 0 && change.text === '' && (isWholeLineDeleted || startLine !== endLine);
-            });
-            await updateLineNumbers(event.document, autoLineRenum, autoSemi);
+        if (event.document.languageId === 'fanuctp_ls' && autoLineRenum) {
+            await updateLineNumbers(event.document);
         }
     }, 50); 
 
@@ -107,7 +98,7 @@ export function activate(context: vscode.ExtensionContext) {
     const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', async (event: vscode.TextDocumentChangeEvent) => {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'fanuctp_ls') {
-            await updateLineNumbers(event.document, true, true);
+            await updateLineNumbers(event.document);
         }
     });
 
@@ -219,10 +210,8 @@ export function activate(context: vscode.ExtensionContext) {
 // Updates the line numbers in the document
 // Called on document change in total line numbers
 // Called on command execution
-async function updateLineNumbers(document: vscode.TextDocument, autoLineRenum: boolean, autoSemi: boolean) {
-    if (!autoLineRenum || !autoSemi) {
-        return;
-    }
+async function updateLineNumbers(document: vscode.TextDocument) {
+
     // Get the file name of the document
     const fileName = path.basename(document.fileName);
     if (!(fileName in fileDict)) {

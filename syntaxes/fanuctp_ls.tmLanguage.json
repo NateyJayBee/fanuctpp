@@ -46,7 +46,7 @@
 				},
 				{
 					"name": "keyword.control.fanuctp_ls",
-					"match": "\\b(JMP|LBL|CALL|IF|THEN|ELSE|ENDIF|END|WAIT|SKIP|CONDITION|J|L|C|AND|OR|TIMEOUT|SELECT|RUN|LOCK|UNLOCK|PREG|ABORT|PAUSE|SkipJump|TORQ_LIMIT|PULSE)\\b"
+					"match": "\\b(JMP|LBL|CALL|IF|THEN|ELSE|ENDIF|END|WAIT|SKIP|CONDITION|J|L|C|AND|OR|TIMEOUT|SELECT|RUN|LOCK|UNLOCK|PREG|ABORT|PAUSE|SkipJump|TORQ_LIMIT|PULSE|SERVOTOOL)\\b"
 				},
 				{
 					"name": "keyword.adv_control.fanuctp_ls",

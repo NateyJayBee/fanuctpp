@@ -96,7 +96,6 @@ function activate(context) {
     const config = vscode.workspace.getConfiguration('fanuctpp');
     // Enable auto line edits
     const autoLineRenum = config.get('autoLineRenumber', true);
-    const autoSemi = config.get('autoLineRenumber', true);
     // Set line numbers for documents that are opened
     const disposeOpen = vscode.workspace.onDidOpenTextDocument(document => {
         if (document.languageId === 'fanuctp_ls') {
@@ -109,16 +108,8 @@ function activate(context) {
             return;
         }
         setLineNumbers(event.document);
-        if (event.document.languageId === 'fanuctp_ls') {
-            const lineCreated = event.contentChanges.some(change => change.text.includes('\n'));
-            //const lineDeleted = event.contentChanges.some(change => change.rangeLength > 0 && change.text === '');
-            const lineDeleted = event.contentChanges.some(change => {
-                const startLine = change.range.start.line;
-                const endLine = change.range.end.line;
-                const isWholeLineDeleted = change.range.start.character === 0 && change.range.end.character === 0 && startLine !== endLine;
-                return change.rangeLength > 0 && change.text === '' && (isWholeLineDeleted || startLine !== endLine);
-            });
-            yield updateLineNumbers(event.document, autoLineRenum, autoSemi);
+        if (event.document.languageId === 'fanuctp_ls' && autoLineRenum) {
+            yield updateLineNumbers(event.document);
         }
     }), 50);
     const disposeDebounceChange = vscode.workspace.onDidChangeTextDocument(debouncedOnDidChangeTextDocument);
@@ -127,7 +118,7 @@ function activate(context) {
     const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', (event) => __awaiter(this, void 0, void 0, function* () {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'fanuctp_ls') {
-            yield updateLineNumbers(event.document, true, true);
+            yield updateLineNumbers(event.document);
         }
     }));
     // WEBVIEW LABEL VIEW
@@ -211,11 +202,8 @@ function activate(context) {
 // Updates the line numbers in the document
 // Called on document change in total line numbers
 // Called on command execution
-function updateLineNumbers(document, autoLineRenum, autoSemi) {
+function updateLineNumbers(document) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (!autoLineRenum || !autoSemi) {
-            return;
-        }
         // Get the file name of the document
         const fileName = path.basename(document.fileName);
         if (!(fileName in fileDict)) {
