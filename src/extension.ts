@@ -30,6 +30,30 @@ const highlightDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: 'rgba(211, 211, 211, 0.5)'
 });
 
+class CallDefinitionProvider implements vscode.DefinitionProvider {
+    async provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Location | vscode.Location[] | null> {
+        const range = document.getWordRangeAtPosition(position, /\bCALL\s+(\w+)/);
+        if (range) {
+            const word = document.getText(range);
+            const programNameMatch = word.match(/\bCALL\s+(\w+)/);
+            if (programNameMatch) {
+                const programName = programNameMatch[1];
+                const currentDir = path.dirname(document.uri.fsPath);
+                const programFilePath = path.join(currentDir, `${programName}.ls`);
+                const programFileUri = vscode.Uri.file(programFilePath);
+
+                try {
+                    const doc = await vscode.workspace.openTextDocument(programFileUri);
+                    return new vscode.Location(programFileUri, new vscode.Position(0, 0));
+                } catch (error) {
+                    vscode.window.showErrorMessage(`Cannot open file: ${programFilePath}`);
+                }
+            }
+        }
+        return null;
+    }
+}
+
 export function activate(context: vscode.ExtensionContext) {
 
     console.log('Extension "fanuctpp" is now active!');
@@ -180,6 +204,9 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
     });
+
+    // Register the definition provider for 'fanuctp_ls' language
+    context.subscriptions.push(vscode.languages.registerDefinitionProvider('fanuctp_ls', new CallDefinitionProvider()));
 
     // Pushing all event listeners and commands to the context
     context.subscriptions.push(disposeOpen, disposeDebounceChange, disposeLabelWindow, disposeActiveEditorChange);
