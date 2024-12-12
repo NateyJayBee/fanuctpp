@@ -1,9 +1,16 @@
-# Ignore specific files
-config.json
-secret.txt
+# Exclude node_modules except for production dependencies
+node_modules/**
+!node_modules/@types
+!node_modules/@vscode
 
-# Ignore all log files
-*.log
+# Exclude build directories
+out/**
 
-# Ignore node_modules directory
-node_modules/
+# Exclude test directories
+test/**
+
+# Exclude other files
+.vscode/**
+.git/**
+*.ts
+*.map

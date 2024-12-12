@@ -57,7 +57,7 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/NateyJayBee/fanuctpp/blob/master/LICENSE.md)
 
 ## Known Issues
 
