@@ -1,6 +1,6 @@
 # fanuctpp README
 
-This extension includes themed syntax for Fanuc (.ls and soon .kl) files, and minor text editor functionality.
+This extension is for Fanuc proprietary Teach Pendant Programming. It contains a defined syntax and custom theme, as well as multiple coding efficiency, autofill features, commands, and interactive webviews.
 
 ## Features
 
@@ -12,7 +12,7 @@ Themed syntax for (.ls) files. Each of the following syntaxes has its own colori
 - Constant language keywords:
     - UTOOL_NUM, UFRAME_NUM, UTOOL, UFRAME, OVERRIDE, RSR, UALM, PAYLOAD, TIMER, DI, DO, GI, GO, RI, RO, UI, UO, SI, SO, SPI, SPO, SSI, SSO, CSI, CSO, AR, SR, GO, F, M, PR, UF, UT, CONFIG, X, Y, Z, W, P, R, VR
 - Move types:
-    - CNT, FINE, ACC(\d{1,3})
+    - CNT, FINE, ACC
 - I/O signals:
     - ON, OFF
 - Header section:
@@ -22,22 +22,21 @@ Themed syntax for (.ls) files. Each of the following syntaxes has its own colori
 - Labels:
     - R[123:My label here]
     - PR[123:My label here]
-- System Variables:
-    - $strings $that $begin $with $a $
-- Any Numbers outside of the header
+- System variables
 - TP line numbers
 
 Basic event handler to detect when a new (.ls) file is opened and when changes are made.
 
 ### New Features
 
-- **Automatic Line Renumbering**: Automatically renumbers lines in .ls files when changes are made.
+- **Automatic Line Renumbering**: Automatically renumbers in-text lines in .ls files when changes are made.
+- **Automatic Semicolon Placement**: Attached to Line Renumbering, ends in-text lines in .ls files with ";"
 - **Label Webview Command**: Provides a command to open a webview for labels.
 - **Ctrl+Click to Open Filename**: Allows users to ctrl+click on a `CALL 'programName'` instance to open the corresponding file if it exists in the same directory.
 
 ## Requirements
 
-None.
+VS Code 1.95.0
 
 ## Usage
 
@@ -69,7 +68,7 @@ Fanuctpp release 0.0.1
 
 Release:
     Created label webview and command to open it
-    Created ctrl+click definition to open filename if in same directory as current file
+    Created ctrl+click definition to open filename if it's in the same directory as current file
 
 Fanuctpp pre-release 0.0.1
 
