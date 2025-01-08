@@ -4,33 +4,11 @@ This extension is for Fanuc proprietary Teach Pendant Programming. It contains a
 
 ## Features
 
-Themed syntax for (.ls) files. Each of the following syntaxes has its own coloring theme:
-- Remarks with (!)
-- Remarks with (//)
-- Control keywords:
-    - JMP, LBL, CALL, IF, THEN, ELSE, ENDIF, END, WAIT, SKIP, CONDITION, J, L, C, AND, OR, TIMEOUT, SELECT, RUN, LOCK, UNLOCK, PREG, ABORT, PAUSE
-- Constant language keywords:
-    - UTOOL_NUM, UFRAME_NUM, UTOOL, UFRAME, OVERRIDE, RSR, UALM, PAYLOAD, TIMER, DI, DO, GI, GO, RI, RO, UI, UO, SI, SO, SPI, SPO, SSI, SSO, CSI, CSO, AR, SR, GO, F, M, PR, UF, UT, CONFIG, X, Y, Z, W, P, R, VR
-- Move types:
-    - CNT, FINE, ACC
-- I/O signals:
-    - ON, OFF
-- Header section:
-    - /PROG through /MN, /POS, /END
-- Operators:
-    - +, -, <, >, =, !, %
-- Labels:
-    - R[123:My label here]
-    - PR[123:My label here]
-- System variables
-- TP line numbers
-
-Basic event handler to detect when a new (.ls) file is opened and when changes are made.
-
+- **Themed LS Files**: Custom theme for .ls files
 - **Automatic Line Renumbering**: Automatically renumbers in-text lines in .ls files when changes are made.
-- **Automatic Semicolon Placement**: Attached to Line Renumbering, ends in-text lines in .ls files with ";"
-- **Label Webview Command**: Provides a command to open a webview for labels.
-- **Ctrl+Click to Open Filename**: Allows users to ctrl+click on a `CALL 'programName'` instance to open the corresponding file if it exists in the same directory.
+- **Automatic Semicolon Placement**: Automatically ends in-text lines in .ls files with a semicolon.
+- **Label Webview Command**: View all the Labels and Jump Labels in your code and move to the line number.
+- **Ctrl+Click to Open Filename**: Automatically open a file through text by clicking on it while holding ctrl.
 
 ## Requirements
 
@@ -38,10 +16,11 @@ VS Code 1.95.0
 
 ## Usage
 
-- **Automatic Line Renumbering**: This feature is enabled by default and will automatically renumber lines in .ls files when changes are made.
-CAN BE DISABLED with user setting "autoLineRenumber": false
+- **Automatic Line Renumbering**: This feature is enabled by default.
+    CAN BE DISABLED with user setting "autoLineRenumber": false
+- **Automatic Semicolon Placement**: Attached to Line Renumbering.
 - **Label Webview Command**: Use the command `extension.openLabelView` to open the label webview. Ctrl+Shift+P
-- **Ctrl+Click to Open Filename**: Ctrl+click on a `CALL 'programName'` instance to open the corresponding file if it exists in the same directory.
+- **Ctrl+Click to Open Filename**: Ctrl+click on a program name in `CALL 'programName'` to open the corresponding file if it exists in the same directory.
 
 ## Installation
 
