@@ -3,6 +3,7 @@
   "displayName": "Advanced Fanuc TP",
   "description": "Advanced Language extension for Fanuc Teach Pendant Programming",
   "version": "0.0.1",
+  "publisher": "NathanBadanjek",
   "main": "./out/extension.js",
   "scripts": {
     "watch": "tsc -watch -p .",
