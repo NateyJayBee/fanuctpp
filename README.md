@@ -27,8 +27,6 @@ Themed syntax for (.ls) files. Each of the following syntaxes has its own colori
 
 Basic event handler to detect when a new (.ls) file is opened and when changes are made.
 
-### New Features
-
 - **Automatic Line Renumbering**: Automatically renumbers in-text lines in .ls files when changes are made.
 - **Automatic Semicolon Placement**: Attached to Line Renumbering, ends in-text lines in .ls files with ";"
 - **Label Webview Command**: Provides a command to open a webview for labels.
@@ -41,14 +39,13 @@ VS Code 1.95.0
 ## Usage
 
 - **Automatic Line Renumbering**: This feature is enabled by default and will automatically renumber lines in .ls files when changes are made.
-CAN BE DISABLED with user setting "autoLineRenumer": false
-- **Label Webview Command**: Use the command `extension.openLabelView` to open the label webview.
+CAN BE DISABLED with user setting "autoLineRenumber": false
+- **Label Webview Command**: Use the command `extension.openLabelView` to open the label webview. Ctrl+Shift+P
 - **Ctrl+Click to Open Filename**: Ctrl+click on a `CALL 'programName'` instance to open the corresponding file if it exists in the same directory.
 
 ## Installation
 
 1. Install the extension from the VS Code Marketplace.
-2. Open a Fanuc (.ls) file to activate the extension.
 
 ## Contributing
 
