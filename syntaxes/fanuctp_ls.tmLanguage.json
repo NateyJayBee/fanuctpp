@@ -2,6 +2,9 @@
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Fanuc LS Language",
 	"scopeName": "source.fanuctp_ls",
+	"fileTypes": [
+	  "ls"
+	],
 	"patterns": [
 		{
 			"include": "#constants"

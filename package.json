@@ -29,8 +29,17 @@
     "url": "https://github.com/NateyJayBee/fanuctpp"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Formatters"
   ],
+	"keywords": [
+		"Fanuc",
+		"LS",
+    "ls",
+    "KL",
+    "kl",
+    "TP"
+	],
   "contributes": {
     "languages": [
       {
@@ -77,12 +86,11 @@
       }
     ],
     "themes": [
-      {
-        "label": "Fanuc Theme",
-        "id": "fanuctp_ls",
-        "uiTheme": "vs-dark",
-        "path": "./themes/fanuctpp_ls.tmTheme.json"
-      }
+        {
+            "label": "Fanuc Theme",
+            "uiTheme": "vs-dark",
+            "path": "./themes/fanuctpp_ls.tmTheme.json"
+        }
     ]
   },
   "icon": "images/FanucLogo.png"
