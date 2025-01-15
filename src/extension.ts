@@ -32,12 +32,12 @@ const highlightDecorationType = vscode.window.createTextEditorDecorationType({
 
 class CallDefinitionProvider implements vscode.DefinitionProvider {
     async provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Location | vscode.Location[] | null> {
-        const range = document.getWordRangeAtPosition(position, /\bCALL\s+(\w+)/);
+        const range = document.getWordRangeAtPosition(position, /\bCALL\s+(\w+)|\bRUN\s+(\w+)/);
         if (range) {
             const word = document.getText(range);
-            const programNameMatch = word.match(/\bCALL\s+(\w+)/);
+            const programNameMatch = word.match(/\bCALL\s+(\w+)|\bRUN\s+(\w+)/);
             if (programNameMatch) {
-                const programName = programNameMatch[1];
+                const programName = programNameMatch[1] || programNameMatch[2];
                 const currentDir = path.dirname(document.uri.fsPath);
                 const programFilePath = path.join(currentDir, `${programName}.ls`);
                 const programFileUri = vscode.Uri.file(programFilePath);
