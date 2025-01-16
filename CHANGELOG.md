@@ -1,36 +1,36 @@
 # Change Log
 
-## [0.0.2] - YYYY-MM-DD
+## [Unreleased]
 ### Added
-- Automatic teach pendant line renumbering on document text change
-- teach pendant line renumbering command
+- New features or additions.
 
+### Changed
+- Changes in existing functionality.
 
-## [0.0.1]
+### Fixed
+- Bug fixes.
 
-- Pre-release changes
-- (.ls)
+### Removed
+- Removed features.
 
+## [0.0.2] - 2025-01-15
 ### Added
-- Themed syntax for (.ls) files. Each of the following syntaxes has its own coloring theme:
-  - Remarks with (!)
-  - Remarks with (//)
-  - Control keywords:
-    - JMP, LBL, CALL, IF, THEN, ELSE, ENDIF, END, WAIT, SKIP, CONDITION, J, L, C, AND, OR, TIMEOUT, SELECT, RUN, LOCK, UNLOCK, PREG, ABORT, PAUSE
-  - Constant language keywords:
-    - UTOOL_NUM, UFRAME_NUM, UTOOL, UFRAME, OVERRIDE, RSR, UALM, PAYLOAD, TIMER, DI, DO, GI, GO, RI, RO, UI, UO, SI, SO, SPI, SPO, SSI, SSO, CSI, CSO, AR, SR, GO, F, M, PR, UF, UT, CONFIG, X, Y, Z, W, P, R
-  - Move types:
-    - CNT, FINE
-  - I/O signals:
-    - ON, OFF
-  - Header section:
-    - /PROG through /MN, /POS, /END
-  - Operators:
-    - +, -, <, >, =, !, %
-  - Labels:
-    - R[123:My label here]
-    - PR[123:My label here]
-  - System Variables:
-    - $strings $that $begin $with $a $
-  - Any Numbers outside of the header
-  - TP line numbers
+- Description of what was added in this version.
+
+### Changed
+- Description of what was changed in this version.
+
+### Fixed
+- Auto semicolon placement in Labels for I/O or Registers
+
+### Removed
+- Description of what was removed in this version.
+
+## [0.0.1] - 2025-01-01
+### Added
+- Initial release.
+- Automatic teach pendant line renumbering on document text change.
+- Teach pendant line renumbering command.
+- Label Webview.
+- Ctrl+Click open file.
+- Themed syntax for (.ls) files. Each has its own coloring theme.

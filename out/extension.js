@@ -276,10 +276,10 @@ function updateLineNumbers(document) {
                         let content = match[2].trim();
                         // Handle lines starting with "J " or "L "
                         if (content.startsWith("J ") || content.startsWith("L ")) {
-                            lineText = tpLineText + ":" + content + ' ;';
+                            lineText = tpLineText + ":" + content + '   ;';
                         }
                         else {
-                            lineText = tpLineText + ":  " + content + ' ;';
+                            lineText = tpLineText + ":  " + content + '   ;';
                         }
                     }
                 }
@@ -290,7 +290,7 @@ function updateLineNumbers(document) {
                     lineText = tpLineText + ":   ;";
                 }
                 else if (twoSemiEndRegex.test(lineText)) {
-                    lineText = tpLineText + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');
+                    lineText = tpLineText + ":" + lineText.slice(5).replace(twoSemiEndRegex, '   ;');
                 }
                 else if (lineNumRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.slice(5);
