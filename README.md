@@ -19,8 +19,8 @@ VS Code 1.95.0
 - **Automatic Line Renumbering**: This feature is enabled by default.
     CAN BE DISABLED with user setting "autoLineRenumber": false
 - **Automatic Semicolon Placement**: Attached to Line Renumbering.
-- **Label Webview Command**: Use the command `extension.openLabelView` to open the label webview. Ctrl+Shift+P
-- **Ctrl+Click to Open Filename**: Ctrl+click on a program name in `CALL 'programName'` to open the corresponding file if it exists in the same directory.
+- **Label Webview Command**: Use the command `fanuctpp.openLabelView` to open the label webview. Ctrl+Shift+P
+- **Ctrl+Click to Open Filename**: Ctrl+click on a program name in `CALL/RUN 'programName'` to open the corresponding file if it exists in the same directory.
 
 ## Installation
 
@@ -36,7 +36,7 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 
 ## Known Issues
 
-Some numbers may not be colored with this theme
+To see current issues and to report issues, please visit our [GitHub Issues Page](https://github.com/NateyJayBee/fanuctpp/issues).
 
 ## Release Notes
 
