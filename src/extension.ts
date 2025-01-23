@@ -112,7 +112,9 @@ export function activate(context: vscode.ExtensionContext) {
         lastActiveEditor = editor;
         const document = editor.document;
         const labels = extractLabels(document);
-        const jumps = extractJumps(document, labels);
+        const jumpLabels = extractJumps(document, labels);
+        const skipLabels = extractSkips(document, labels);
+        const skipJumpLabels = extractSkipJumps(document, labels);
 
         panel = vscode.window.createWebviewPanel(
             'labelView',
@@ -124,7 +126,7 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
         // Set the HTML content
-        panel.webview.html = getWebviewContent(document, labels, jumps);
+        panel.webview.html = getWebviewContent(document, labels, jumpLabels, skipLabels, skipJumpLabels);
 
         // Handle messages from the webview
         panel.webview.onDidReceiveMessage(
@@ -139,9 +141,11 @@ export function activate(context: vscode.ExtensionContext) {
                         return;
                     case 'gotoJumpLabel':
                         const jump = message.jump;
+                        const skip = message.skip;
+                        const skipJump = message.skipJump;
                         editor = vscode.window.activeTextEditor;
                         if (lastActiveEditor) {
-                            gotoJumpLabel(lastActiveEditor, jump);
+                            gotoJumpLabel(lastActiveEditor, jump, skip, skipJump);
                         }
                         return;
                     }
@@ -164,12 +168,14 @@ export function activate(context: vscode.ExtensionContext) {
             const document = editor.document;
             const labels = extractLabels(document);
             const jumps = extractJumps(document, labels);
+            const skips = extractSkips(document, labels);
+            const skipJumps = extractSkipJumps(document, labels);
 
             // Update the Webview content
             if (panel) {
-                panel.webview.html = getWebviewContent(document, labels, jumps);
+                panel.webview.html = getWebviewContent(document, labels, jumps, skips, skipJumps);
 
-                // Re-register the message handler for the new editor
+                // Re-register the message handler for the newly opened doc in editor
                 panel.webview.onDidReceiveMessage(
                     message => {
                         switch (message.command) {
@@ -182,9 +188,11 @@ export function activate(context: vscode.ExtensionContext) {
                                 return;
                             case 'gotoJumpLabel':
                                 const jump = message.jump;
+                                const skip = message.skip;
+                                const skipJump = message.skipJump;
                                 editor = vscode.window.activeTextEditor;
                                 if (lastActiveEditor) {
-                                    gotoJumpLabel(lastActiveEditor, jump);
+                                    gotoJumpLabel(lastActiveEditor, jump, skip, skipJump);
                                 }
                                 return;
                         }
@@ -477,6 +485,66 @@ function extractJumps(document: vscode.TextDocument, labels: string[]): { [label
     return jumps;
 }
 
+//Extract skip label conditions
+function extractSkips(document: vscode.TextDocument, labels: string[]): { [label: string]: string[] } {
+    const skips: { [label: string]: string[] } = {};
+    const skipRegex = /Skip,LBL\[(\d*)\]/g;
+
+    // Get the file name of the document
+    const fileName = path.basename(document.fileName);
+    if (!(fileName in fileDict)) {
+        return {};
+    }
+
+    // Destructure with default values
+    let [startLine, endLine] = fileDict[fileName] || [0, document.lineCount];
+
+    for (let i = startLine; i < endLine + 1; i++) {
+        const line = document.lineAt(i).text;
+        const matches = line.match(skipRegex);
+        if (matches) {
+            matches.forEach(match => {
+                let label = match.slice(7).trim();
+                label = extractNumberFromLabel(label);
+                if (!(label in skips)) {
+                    skips[label] = [];
+                }
+                skips[label].push("Skip,LBL on Line:   " + (i - startLine + 1).toString());
+            });
+        }
+    }
+    return skips;
+}
+
+function extractSkipJumps(document: vscode.TextDocument, labels: string[]): { [label: string]: string[] } {
+    const skipJumps: { [label: string]: string[] } = {};
+    const skipJumpRegex = /SkipJump,LBL\[(\d*)\]/g;
+
+    // Get the file name of the document
+    const fileName = path.basename(document.fileName);
+    if (!(fileName in fileDict)) {
+        return {};
+    }
+
+    // Destructure with default values
+    let [startLine, endLine] = fileDict[fileName] || [0, document.lineCount];
+
+    for (let i = startLine; i < endLine + 1; i++) {
+        const line = document.lineAt(i).text;
+        const matches = line.match(skipJumpRegex);
+        if (matches) {
+            matches.forEach(match => {
+                let label = match.slice(7).trim();
+                label = extractNumberFromLabel(label);
+                if (!(label in skipJumps)) {
+                    skipJumps[label] = [];
+                }
+                skipJumps[label].push("SkipJump,LBL on Line:   " + (i - startLine + 1).toString());
+            });
+        }
+    }
+    return skipJumps;
+}
 
 function gotoLabel(editor: vscode.TextEditor, label: string) {
     label = ":  " + label;
@@ -533,9 +601,14 @@ function gotoLabel(editor: vscode.TextEditor, label: string) {
     }
 }
 
-function gotoJumpLabel(editor: vscode.TextEditor, jump: string) {
+function gotoJumpLabel(editor: vscode.TextEditor, jump?: string, skip?: string, skipJump?: string) {
     // Extract the jump number from the jump string
-    const jumpNum = parseInt(jump.slice(19), 10);
+    const jumpNum = jump ? parseInt(jump.slice(19), 10) : 0;
+    const skipNum = skip ? parseInt(skip.slice(20), 10) : 0;
+    const skipJumpNum = skipJump ? parseInt(skipJump.slice(24), 10): 0;
+
+    // Determine the target line based on the provided input
+    const targetNum = jumpNum || skipNum || skipJumpNum;
 
     let document = editor.document;
     if (!lastActiveEditor) {
@@ -554,7 +627,7 @@ function gotoJumpLabel(editor: vscode.TextEditor, jump: string) {
     let [startLine, endLine] = fileDict[fileName] || [0, document.lineCount];
 
     // Calculate the target line number
-    const targetLine = jumpNum + startLine - 1;
+    const targetLine = targetNum + startLine - 1;
 
     // Ensure the target line is within the document's line count
     if (targetLine >= document.lineCount) {
@@ -590,9 +663,11 @@ function gotoJumpLabel(editor: vscode.TextEditor, jump: string) {
     }, 500);
 }
 
-
-
-function getWebviewContent(document: vscode.TextDocument, labels: string[], jumps: { [label: string]: string[] }): string {
+// Webview content
+function getWebviewContent(document: vscode.TextDocument, labels: string[], 
+    jumps: { [label: string]: string[] },
+    skips: { [label: string]: string[] },
+    skipJumps: { [label: string]: string[] }): string {
 
     // Get the file name of the document
     const fileName = path.basename(document.fileName);
@@ -605,6 +680,8 @@ function getWebviewContent(document: vscode.TextDocument, labels: string[], jump
     const labelList = labels.map(label => {
         const labelNumber = extractNumberFromLabel(label);
         const jumpLines = (jumps[labelNumber] || []).map(jump => `<p class="jump-text" data-jump="${jump}">${jump}</p>`).join('');
+        const skipLines = (skips[labelNumber] || []).map(skip => `<p class="jump-text" data-skip="${skip}">${skip}</p>`).join('');
+        const skipJumpLines = (skipJumps[labelNumber] || []).map(skipJump => `<p class="jump-text" data-skipJump="${skipJump}">${skipJump}</p>`).join('');
         return `
         <li data-label="${label}">
             <div class="label-container">
@@ -612,6 +689,8 @@ function getWebviewContent(document: vscode.TextDocument, labels: string[], jump
                 <div class="label-text">
                     <p>${label}</p>
                     ${jumpLines}
+                    ${skipLines}
+                    ${skipJumpLines}
                 </div>
             </div>
         </li>
@@ -683,7 +762,9 @@ function getWebviewContent(document: vscode.TextDocument, labels: string[], jump
                 item.addEventListener('click', (event) => {
                     event.stopPropagation();
                     const jump = item.getAttribute('data-jump');
-                    vscode.postMessage({ command: 'gotoJumpLabel', jump });
+                    const skip = item.getAttribute('data-skip');
+                    const skipJump = item.getAttribute('data-skipJump');
+                    vscode.postMessage({ command: 'gotoJumpLabel', jump, skip, skipJump });
                 });
             });
         </script>
