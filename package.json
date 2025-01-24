@@ -89,7 +89,7 @@
         {
             "label": "Fanuc Theme",
             "uiTheme": "vs-dark",
-            "path": "./themes/fanuctpp_ls.tmTheme.json"
+            "path": "./themes/fanuc_theme.tmTheme.json"
         }
     ]
   },
