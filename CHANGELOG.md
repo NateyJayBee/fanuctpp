@@ -1,8 +1,9 @@
 # Change Log
 
-## [Unreleased] - 2025-00-00
+## [0.0.2] - 2025-00-00
 ### Added
-- Theme to previously non-themed syntax
+- Theme to previously non-themed syntax in .LS files
+- Theme for .KL files
 
 ### Changed
 - Ctrl+Click to open file now opens on 'RUN programName'
