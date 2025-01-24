@@ -93,5 +93,11 @@
         }
     ]
   },
+  "snippets": [
+      {
+          "language": "fanuctp_kl",
+          "path": "./completions/fanuctp_kl_completions.json"
+      }
+  ],
   "icon": "images/FanucLogo.png"
 }
