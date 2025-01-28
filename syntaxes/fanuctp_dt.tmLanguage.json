@@ -1,0 +1,93 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Fanuc DT Language",
+	"scopeName": "source.fanuctp_dt",
+	"fileTypes": [
+		"dt",
+        "DT"
+	],
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#booleans"
+		},
+		{
+			"include": "#directives"
+		},
+		{
+			"include": "#types"
+		}
+	],
+	"repository": {
+		"strings": {
+			"patterns": [
+				{
+					"name": "string.single-quoted.fanuctp_dt",
+					"begin": "'",
+					"end": "'"
+				},
+                {
+					"name": "string.double-quoted.fanuctp_dt",
+					"begin": "\"",
+					"end": "\""
+				}
+			]
+		},
+		"numbers": {
+			"patterns": [
+				{
+					"name": "numeric.decimal.fanuctp_dt",
+					"match": "\\b\\d+\\.\\d+\\b"
+				},
+				{
+					"name": "numeric.integer.fanuctp_dt",
+					"match": "\\b\\d+\\b"
+				}
+			]
+		},
+		"booleans": {
+			"patterns": [
+				{
+					"name": "boolean.true.fanuctp_dt",
+					"match": "\\b(true|TRUE)\\b"
+				},
+				{
+					"name": "boolean.false.fanuctp_dt",
+					"match": "\\b(false|FALSE)\\b"
+				}
+			]
+		},
+		"directives": {
+			"patterns": [
+				{
+					"name": "directive.fanuctp_dt",
+					"match": "%[a-zA-Z]+"
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"name": "type.system_variable.fanuctp_dt",
+					"match": "\\$\\w+"
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.double-dash.fanuctp_dt",
+          			"match": "--.*$"
+				}
+			]
+		}
+	}
+}

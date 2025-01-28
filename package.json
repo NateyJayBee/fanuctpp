@@ -65,6 +65,30 @@
           ".KL"
         ],
         "configuration": "./fanuc_kl_lang_config.json"
+      },
+      {
+        "id": "fanuctp_dt",
+        "aliases": [
+          "Fanuc DT",
+          "fanuctp_dt"
+        ],
+        "extensions": [
+          ".dt",
+          ".DT"
+        ],
+        "configuration": "./fanuc_dt_lang_config.json"
+      },
+      {
+        "id": "fanuctp_cf",
+        "aliases": [
+          "Fanuc CF",
+          "fanuctp_cf"
+        ],
+        "extensions": [
+          ".cf",
+          ".CF"
+        ],
+        "configuration": "./fanuc_cf_lang_config.json"
       }
     ],
     "commands": [
@@ -83,6 +107,16 @@
         "language": "fanuctp_kl",
         "scopeName": "source.fanuctp_kl",
         "path": "./syntaxes/fanuctp_kl.tmLanguage.json"
+      },
+      {
+        "language": "fanuctp_dt",
+        "scopeName": "source.fanuctp_dt",
+        "path": "./syntaxes/fanuctp_dt.tmLanguage.json"
+      },
+      {
+        "language": "fanuctp_cf",
+        "scopeName": "source.fanuctp_cf",
+        "path": "./syntaxes/fanuctp_cf.tmLanguage.json"
       }
     ],
     "themes": [

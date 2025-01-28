@@ -1,0 +1,93 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Fanuc CF Language",
+	"scopeName": "source.fanuctp_cf",
+	"fileTypes": [
+		"cf",
+        "CF"
+	],
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#booleans"
+		},
+		{
+			"include": "#directives"
+		},
+		{
+			"include": "#types"
+		}
+	],
+	"repository": {
+		"strings": {
+			"patterns": [
+				{
+					"name": "string.single-quoted.fanuctp_cf",
+					"begin": "'",
+					"end": "'"
+				},
+                {
+					"name": "string.double-quoted.fanuctp_cf",
+					"begin": "\"",
+					"end": "\""
+				}
+			]
+		},
+		"numbers": {
+			"patterns": [
+				{
+					"name": "numeric.decimal.fanuctp_cf",
+					"match": "\\b\\d+\\.\\d+\\b"
+				},
+				{
+					"name": "numeric.integer.fanuctp_cf",
+					"match": "\\b\\d+\\b"
+				}
+			]
+		},
+		"booleans": {
+			"patterns": [
+				{
+					"name": "boolean.true.fanuctp_cf",
+					"match": "\\b(true|TRUE)\\b"
+				},
+				{
+					"name": "boolean.false.fanuctp_cf",
+					"match": "\\b(false|FALSE)\\b"
+				}
+			]
+		},
+		"directives": {
+			"patterns": [
+				{
+					"name": "directive.fanuctp_cf",
+					"match": "%[a-zA-Z]+"
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"name": "type.system_variable.fanuctp_cf",
+					"match": "\\$\\w+"
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.double-dash.fanuctp_cf",
+          			"match": "--.*$"
+				}
+			]
+		}
+	}
+}

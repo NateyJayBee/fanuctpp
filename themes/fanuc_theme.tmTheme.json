@@ -253,6 +253,127 @@
           "foreground": "#4CAF50",
           "background": "#FFF2CC"
         }
+      },
+
+
+
+
+
+
+      {
+        "scope": "string.single-quoted.fanuctp_dt",
+        "settings": {
+            "foreground": "#FFFF80"
+        }
+      },
+      {
+        "scope": "string.double-quoted.fanuctp_dt",
+        "settings": {
+            "foreground": "#FFFF80"
+        }
+      },
+      {
+        "scope": "numeric.decimal.fanuctp_dt",
+        "settings": {
+            "foreground": "#57F8FF"
+        }
+      },
+      {
+        "scope": "numeric.integer.fanuctp_dt",
+        "settings": {
+            "foreground": "#57F8FF"
+        }
+      },
+      {
+        "scope": "boolean.true.fanuctp_dt",
+        "settings": {
+            "foreground": "#00FF00"
+        }
+      },
+      {
+        "scope": "boolean.false.fanuctp_dt",
+        "settings": {
+            "foreground": "#FF0000"
+        }
+      },
+      {
+        "scope": "directive.fanuctp_dt",
+        "settings": {
+            "foreground": "#DCDCCC"
+        }
+      },
+      {
+        "scope": "type.system_variable.fanuctp_dt",
+        "settings": {
+          "foreground": "#E3CEAB"
+        }
+      },
+      {
+        "scope": "comment.double-dash.fanuctp_dt",
+        "settings": {
+          "foreground": "#4CAF50",
+          "background": "#FFF2CC"
+        }
+      },
+
+
+
+
+
+      {
+        "scope": "string.single-quoted.fanuctp_cf",
+        "settings": {
+            "foreground": "#FFFF80"
+        }
+      },
+      {
+        "scope": "string.double-quoted.fanuctp_cf",
+        "settings": {
+            "foreground": "#FFFF80"
+        }
+      },
+      {
+        "scope": "numeric.decimal.fanuctp_cf",
+        "settings": {
+            "foreground": "#57F8FF"
+        }
+      },
+      {
+        "scope": "numeric.integer.fanuctp_cf",
+        "settings": {
+            "foreground": "#57F8FF"
+        }
+      },
+      {
+        "scope": "boolean.true.fanuctp_cf",
+        "settings": {
+            "foreground": "#00FF00"
+        }
+      },
+      {
+        "scope": "boolean.false.fanuctp_cf",
+        "settings": {
+            "foreground": "#FF0000"
+        }
+      },
+      {
+        "scope": "directive.fanuctp_cf",
+        "settings": {
+            "foreground": "#DCDCCC"
+        }
+      },
+      {
+        "scope": "type.system_variable.fanuctp_cf",
+        "settings": {
+          "foreground": "#E3CEAB"
+        }
+      },
+      {
+        "scope": "comment.double-dash.fanuctp_cf",
+        "settings": {
+          "foreground": "#4CAF50",
+          "background": "#FFF2CC"
+        }
       }
     ]
   }
