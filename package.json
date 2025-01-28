@@ -2,7 +2,7 @@
   "name": "fanuctpp",
   "displayName": "Advanced Fanuc TP",
   "description": "Advanced Language extension for Fanuc Teach Pendant Programming",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "NathanBadanjek",
   "main": "./out/extension.js",
   "scripts": {
@@ -52,7 +52,7 @@
           ".ls",
           ".LS"
         ],
-        "configuration": "./fanuc_ls_lang_config.json"
+        "configuration": "./langs/fanuc_ls_lang_config.json"
       },
       {
         "id": "fanuctp_kl",
@@ -64,7 +64,7 @@
           ".kl",
           ".KL"
         ],
-        "configuration": "./fanuc_kl_lang_config.json"
+        "configuration": "./langs/fanuc_kl_lang_config.json"
       },
       {
         "id": "fanuctp_dt",
@@ -76,7 +76,7 @@
           ".dt",
           ".DT"
         ],
-        "configuration": "./fanuc_dt_lang_config.json"
+        "configuration": "./langs/fanuc_dt_lang_config.json"
       },
       {
         "id": "fanuctp_cf",
@@ -88,7 +88,7 @@
           ".cf",
           ".CF"
         ],
-        "configuration": "./fanuc_cf_lang_config.json"
+        "configuration": "./langs/fanuc_cf_lang_config.json"
       }
     ],
     "commands": [

@@ -1,5 +1,15 @@
 # Change Log
 
+## [0.0.3] - 2025-01-27
+### Added
+- Theme to include .DT and .CF files.
+
+### Changed
+- Project directory structure
+
+### Fixed
+- 
+
 ## [0.0.2] - 2025-01-27
 ### Added
 - Theme to previously non-themed syntax in .LS files
