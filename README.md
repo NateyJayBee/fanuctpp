@@ -44,6 +44,7 @@ To see current issues and to report issues, please visit our [GitHub Issues Page
 
 Fanuctpp release 0.0.2
     Created themed syntax for (.KL) files
+    Minor bugfixes
 
 Fanuctpp release 0.0.1
 

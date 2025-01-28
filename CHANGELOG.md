@@ -1,6 +1,6 @@
 # Change Log
 
-## [0.0.2] - 2025-00-00
+## [0.0.2] - 2025-01-27
 ### Added
 - Theme to previously non-themed syntax in .LS files
 - Theme for .KL files
