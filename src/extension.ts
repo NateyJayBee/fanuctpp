@@ -7,8 +7,9 @@ import * as path from 'path';
 // start line,  end line,  line edits enabled,  total lines,  edit lines, labels, jumps
 let fileDict: { [fileName: string]: [number, number, boolean, number, number] } = {};
 
-// Panel for label webview
-let panel: vscode.WebviewPanel | undefined;
+// Panels for webviews
+let labelPanel: vscode.WebviewPanel | undefined;
+let namePanel: vscode.WebviewPanel | undefined;
 
 // Last editor to track switching editors and keeping code in sync
 let lastActiveEditor: vscode.TextEditor | undefined;
@@ -102,8 +103,59 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // WEBVIEW REGISTER-I/O NAMES
+    const disposeNameView = vscode.commands.registerCommand('extension.openNameView', () => {
+        let editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            return;
+        }
+
+        lastActiveEditor = editor;
+        const document = editor.document;
+        const names = extractNames(document);
+
+        namePanel = vscode.window.createWebviewPanel(
+            'nameView',
+            'Name View',
+            vscode.ViewColumn.Beside, 
+            {
+                enableScripts: true 
+            }
+        );
+
+        // Set the HTML content
+        namePanel.webview.html = getNameWebContent(document, names);
+
+        // Handle messages from the webview
+        namePanel.webview.onDidReceiveMessage(
+            message => {
+                switch (message.command) {
+                    case 'replaceName':
+                        const replaceIndex = parseInt(message.index, 10);
+                        const replaceName = message.newName;
+                        const replaceEditor = vscode.window.activeTextEditor;
+                        if (replaceEditor && lastActiveEditor) {
+                            const names = extractNames(lastActiveEditor.document);
+                            if (replaceIndex >= 0 && replaceIndex < names.length) {
+                                const { name } = names[replaceIndex];
+                                updateName(lastActiveEditor.document, name, replaceName);
+                            }
+                        }
+                        return;
+                }
+            },
+            undefined,
+            context.subscriptions
+        );
+
+        // Listen for when the panel is disposed
+        namePanel.onDidDispose(() => {
+            namePanel = undefined;
+        }, null, context.subscriptions);
+    });
+
     // WEBVIEW LABEL VIEW
-    const disposeLabelWindow = vscode.commands.registerCommand('extension.openLabelView', () => {
+    const disposeLabelView = vscode.commands.registerCommand('extension.openLabelView', () => {
         let editor = vscode.window.activeTextEditor;
         if (!editor) {
             return;
@@ -116,7 +168,7 @@ export function activate(context: vscode.ExtensionContext) {
         const skipLabels = extractSkips(document, labels);
         const skipJumpLabels = extractSkipJumps(document, labels);
 
-        panel = vscode.window.createWebviewPanel(
+        labelPanel = vscode.window.createWebviewPanel(
             'labelView',
             'Label View',
             vscode.ViewColumn.Beside, 
@@ -126,10 +178,10 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
         // Set the HTML content
-        panel.webview.html = getWebviewContent(document, labels, jumpLabels, skipLabels, skipJumpLabels);
+        labelPanel.webview.html = getLabelWebContent(document, labels, jumpLabels, skipLabels, skipJumpLabels);
 
         // Handle messages from the webview
-        panel.webview.onDidReceiveMessage(
+        labelPanel.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
                     case 'gotoLabel':
@@ -155,8 +207,8 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
         // Listen for when the panel is disposed
-        panel.onDidDispose(() => {
-            panel = undefined;
+        labelPanel.onDidDispose(() => {
+            labelPanel = undefined;
         }, null, context.subscriptions);
     });
 
@@ -166,17 +218,17 @@ export function activate(context: vscode.ExtensionContext) {
             lastActiveEditor = editor;
             console.log('active: active editor changed');
             const document = editor.document;
-            const labels = extractLabels(document);
-            const jumps = extractJumps(document, labels);
-            const skips = extractSkips(document, labels);
-            const skipJumps = extractSkipJumps(document, labels);
 
             // Update the Webview content
-            if (panel) {
-                panel.webview.html = getWebviewContent(document, labels, jumps, skips, skipJumps);
+            if (labelPanel) {
+                const labels = extractLabels(document);
+                const jumps = extractJumps(document, labels);
+                const skips = extractSkips(document, labels);
+                const skipJumps = extractSkipJumps(document, labels);
+                labelPanel.webview.html = getLabelWebContent(document, labels, jumps, skips, skipJumps);
 
                 // Re-register the message handler for the newly opened doc in editor
-                panel.webview.onDidReceiveMessage(
+                labelPanel.webview.onDidReceiveMessage(
                     message => {
                         switch (message.command) {
                             case 'gotoLabel':
@@ -201,14 +253,42 @@ export function activate(context: vscode.ExtensionContext) {
                     context.subscriptions
                 );
             }
+
+            if(namePanel){
+                const names = extractNames(document);
+                namePanel.webview.html = getNameWebContent(document, names);
+
+            // Handle messages from the webview
+            namePanel.webview.onDidReceiveMessage(
+                message => {
+                    switch (message.command) {
+                        case 'replaceName':
+                            const replaceIndex = parseInt(message.index, 10);
+                            const replaceName = message.newName;
+                            const replaceEditor = vscode.window.activeTextEditor;
+                            if (replaceEditor && lastActiveEditor) {
+                                const names = extractNames(lastActiveEditor.document);
+                                if (replaceIndex >= 0 && replaceIndex < names.length) {
+                                    const { name } = names[replaceIndex];
+                                    updateName(lastActiveEditor.document, name, replaceName);
+                                }
+                            }
+                            return;
+                    }
+                },
+                undefined,
+                context.subscriptions
+            );
+            }
         }
     });
 
-    // Register the definition provider for 'fanuctp_ls' language
+    // Register the definition provider to open files
     context.subscriptions.push(vscode.languages.registerDefinitionProvider('fanuctp_ls', new CallDefinitionProvider()));
 
     // Pushing all event listeners and commands to the context
-    context.subscriptions.push(disposeOpen, disposeDebounceChange, disposeLabelWindow, disposeActiveEditorChange);
+    context.subscriptions.push(disposeOpen, disposeDebounceChange, 
+        disposeLabelView, disposeNameView, disposeActiveEditorChange);
 
     }
 
@@ -420,6 +500,7 @@ async function setLineNumbers(document: vscode.TextDocument) {
 }
 
 
+// Extract number from label
 function extractNumberFromLabel(label: string): string {
     const match = label.match(/\[(\d+)(?::[^\]]+)?\]/);
     return match ? match[1] : '';
@@ -485,7 +566,7 @@ function extractJumps(document: vscode.TextDocument, labels: string[]): { [label
     return jumps;
 }
 
-//Extract skip label conditions
+// Extract skip label conditions
 function extractSkips(document: vscode.TextDocument, labels: string[]): { [label: string]: string[] } {
     const skips: { [label: string]: string[] } = {};
     const skipRegex = /Skip,LBL\[(\d*)\]/g;
@@ -516,6 +597,7 @@ function extractSkips(document: vscode.TextDocument, labels: string[]): { [label
     return skips;
 }
 
+// Extract skipjump label conditions
 function extractSkipJumps(document: vscode.TextDocument, labels: string[]): { [label: string]: string[] } {
     const skipJumps: { [label: string]: string[] } = {};
     const skipJumpRegex = /SkipJump,LBL\[(\d*)\]/g;
@@ -546,6 +628,7 @@ function extractSkipJumps(document: vscode.TextDocument, labels: string[]): { [l
     return skipJumps;
 }
 
+// Works on LBL
 function gotoLabel(editor: vscode.TextEditor, label: string) {
     label = ":  " + label;
 
@@ -601,6 +684,7 @@ function gotoLabel(editor: vscode.TextEditor, label: string) {
     }
 }
 
+// Works on JMP, Skip, and SkipJump
 function gotoJumpLabel(editor: vscode.TextEditor, jump?: string, skip?: string, skipJump?: string) {
     // Extract the jump number from the jump string
     const jumpNum = jump ? parseInt(jump.slice(19), 10) : 0;
@@ -664,7 +748,7 @@ function gotoJumpLabel(editor: vscode.TextEditor, jump?: string, skip?: string, 
 }
 
 // Webview content
-function getWebviewContent(document: vscode.TextDocument, labels: string[], 
+function getLabelWebContent(document: vscode.TextDocument, labels: string[], 
     jumps: { [label: string]: string[] },
     skips: { [label: string]: string[] },
     skipJumps: { [label: string]: string[] }): string {
@@ -772,5 +856,133 @@ function getWebviewContent(document: vscode.TextDocument, labels: string[],
     </html>`;
 }
 
+// Extract Reg and I/O names from the document
+function extractNames(document: vscode.TextDocument): { item: string, name: string }[] {
+    const combinedRegex = /\b(DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|VR|R)\b.*?:\s*(.*?)(?=\])\]/g;
+    const nameRegex = /(?<=:)[^:\]]+(?=\])/;
+    const matches: { item: string, name: string }[] = [];
+
+    for (let i = 0; i < document.lineCount; i++) {
+        const line = document.lineAt(i).text;
+        const match = line.match(combinedRegex);
+        if (match) {
+            const item = match[0];
+            const name = item.match(nameRegex)?.[0]?.trim() || '';
+            matches.push({ item, name });
+        }
+    }
+
+    return matches;
+}
+
+// Function to handle name updates
+function updateName(document: vscode.TextDocument, oldName: string, newName: string) {
+    const text = document.getText();
+    const newText = text.replace(new RegExp(oldName, 'g'), newName);
+    const edit = new vscode.WorkspaceEdit();
+    const fullRange = new vscode.Range(
+        document.positionAt(0),
+        document.positionAt(text.length)
+    );
+    edit.replace(document.uri, fullRange, newText);
+    vscode.workspace.applyEdit(edit);
+}
+
+// Function to generate the HTML content for the Name Webview
+function getNameWebContent(document: vscode.TextDocument, names: { item: string, name: string }[]): string {
+
+    // Get the file name of the document
+    const fileName = path.basename(document.fileName);
+    if (!(fileName in fileDict)) {
+         return `<!DOCTYPE html>
+    <html lang="en">
+    </html>`;
+    }
+
+    return `<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Register and I/O Names</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                padding: 10px;
+            }
+            h1 {
+                font-size: 1.5em;
+                border-bottom: 2px solid #ddd;
+                padding-bottom: 10px;
+            }
+            ul {
+                list-style-type: none;
+                padding: 0;
+            }
+            li {
+                padding: 10px;
+                border: 1px solid #ddd;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            li:hover {
+                background-color: #f0f0f0;
+            }
+            .name-container {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
+            .name-text {
+                margin: 0;
+                margin-right: 10px;
+            }
+            .name-input {
+                border: 1px solid #ddd;
+                padding: 5px;
+                margin-right: 10px;
+            }
+            .button {
+                padding: 5px 10px;
+                margin-right: 5px;
+                cursor: pointer;
+                border: none;
+                background-color: #007acc;
+                color: white;
+                border-radius: 3px;
+            }
+            .button:hover {
+                background-color: #005f99;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Register and I/O Names</h1>
+        <ul>
+            ${names.map(({ item, name }, index) => `
+                <li data-index="${index}">
+                    <div class="name-container">
+                        <span class="name-text">${item}</span>
+                        <input class="name-input" type="text" placeholder="New name" data-index="${index}">
+                        <button class="button replace-button" data-index="${index}">Replace</button>
+                    </div>
+                </li>
+            `).join('')}
+        </ul>
+        <script>
+            const vscode = acquireVsCodeApi();
+            document.querySelectorAll('.replace-button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = event.target.getAttribute('data-index');
+                    const input = document.querySelector(\`input[data-index="\${index}"]\`);
+                    const newName = input.value;
+                    vscode.postMessage({ command: 'replaceName', index, newName });
+                });
+            });
+        </script>
+    </body>
+    </html>`;
+}
 
 export function deactivate() {}

@@ -95,6 +95,10 @@
       {
         "command": "extension.openLabelView",
         "title": "Open Label View"
+      },
+      {
+        "command": "extension.openNameView",
+        "title": "Open Name View"
       }
     ],
     "grammars": [
