@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-// GLOBAL VARIABLES
 
+// GLOBAL VARIABLES
+let globalGroupState: { [key: string]: boolean } = {};
 // fileDict 1 entry per document
 // start line,  end line,  line edits enabled,  total lines,  edit lines, labels, jumps
 let fileDict: { [fileName: string]: [number, number, boolean, number, number] } = {};
@@ -13,6 +14,7 @@ let namePanel: vscode.WebviewPanel | undefined;
 
 // Last editor to track switching editors and keeping code in sync
 let lastActiveEditor: vscode.TextEditor | undefined;
+let previousActiveEditorFilePath: string | undefined;
 
 let isAutoUpd = false;
 let lineNumber: number = 0;
@@ -31,6 +33,8 @@ const highlightDecorationType = vscode.window.createTextEditorDecorationType({
     backgroundColor: 'rgba(211, 211, 211, 0.5)'
 });
 
+// Definition provider for CALL and RUN statements
+// TODO srch direcotory for MACRO.DG and interpret fanuc macros
 class CallDefinitionProvider implements vscode.DefinitionProvider {
     async provideDefinition(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Location | vscode.Location[] | null> {
         const range = document.getWordRangeAtPosition(position, /\bCALL\s+(\w+)|\bRUN\s+(\w+)/);
@@ -57,7 +61,7 @@ class CallDefinitionProvider implements vscode.DefinitionProvider {
 
 export function activate(context: vscode.ExtensionContext) {
 
-    console.log('Extension "fanuctpp" is now active!');
+    //console.log('Extension "fanuctpp" is now active!');
 
     // ------------------INITIAL SETUP-------------------
     // Set line numbers for all currently open documents
@@ -103,58 +107,78 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    // WEBVIEW REGISTER-I/O NAMES
-    const disposeNameView = vscode.commands.registerCommand('extension.openNameView', () => {
-        let editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
+   // Register the command to open the Name View webview
+   const disposeNameView = vscode.commands.registerCommand('extension.openNameView', () => {
+    let editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        return;
+    }
+
+    lastActiveEditor = editor;
+    const document = editor.document;
+    const names = extractItemNames(document);
+
+    namePanel = vscode.window.createWebviewPanel(
+        'nameView',
+        'Name View',
+        vscode.ViewColumn.Beside, 
+        {
+            enableScripts: true 
         }
+    );
 
-        lastActiveEditor = editor;
-        const document = editor.document;
-        const names = extractNames(document);
+    const groupState = globalGroupState;
 
-        namePanel = vscode.window.createWebviewPanel(
-            'nameView',
-            'Name View',
-            vscode.ViewColumn.Beside, 
-            {
-                enableScripts: true 
-            }
-        );
+    namePanel.webview.html = getNameWebContent(document, names, groupState);
 
-        // Set the HTML content
-        namePanel.webview.html = getNameWebContent(document, names);
-
-        // Handle messages from the webview
-        namePanel.webview.onDidReceiveMessage(
-            message => {
-                switch (message.command) {
-                    case 'replaceName':
-                        const replaceIndex = parseInt(message.index, 10);
-                        const replaceName = message.newName;
-                        const replaceEditor = vscode.window.activeTextEditor;
-                        if (replaceEditor && lastActiveEditor) {
-                            const names = extractNames(lastActiveEditor.document);
-                            if (replaceIndex >= 0 && replaceIndex < names.length) {
-                                const { name } = names[replaceIndex];
-                                updateName(lastActiveEditor.document, name, replaceName);
+    // Handle messages from the webview
+    namePanel.webview.onDidReceiveMessage(
+        async message => {
+            const applyToDirectory = message.applyToDirectory;
+            switch (message.command) {
+                case 'updateName':
+                    const replaceIndex = parseInt(message.index, 10);
+                    const replaceName = message.newName;
+                    const replaceEditor = lastActiveEditor;
+                    if (replaceEditor) {
+                        const groupedNames = extractItemNames(replaceEditor.document);
+                        const names = Object.values(groupedNames).flat();
+                        if (replaceIndex >= 0 && replaceIndex < names.length) {
+                            const { item, name } = names[replaceIndex];
+                            if (applyToDirectory) {
+                                const directory = vscode.Uri.file(path.dirname(replaceEditor.document.uri.fsPath));
+                                await updateNameInDirectory(directory, item, name, replaceName);
+                            } else {
+                                updateName(replaceEditor.document, item, name, replaceName);
                             }
                         }
-                        return;
-                }
-            },
-            undefined,
-            context.subscriptions
-        );
+                    }
+                    return;
+                case 'refresh':
+                    const refreshEditor = vscode.window.activeTextEditor;
+                    if (refreshEditor) {
+                        const names = extractItemNames(refreshEditor.document);
+                        if (namePanel) {
+                            namePanel.webview.html = getNameWebContent(refreshEditor.document, names, globalGroupState);
+                        }
+                    }
+                    return;
+                case 'updateGroupState':
+                    globalGroupState = message.groupState;
+                    return;
+            }
+        },
+        undefined,
+        context.subscriptions
+    );
 
-        // Listen for when the panel is disposed
-        namePanel.onDidDispose(() => {
-            namePanel = undefined;
-        }, null, context.subscriptions);
+    // Listen for when the panel is disposed
+    namePanel.onDidDispose(() => {
+        namePanel = undefined;
+    }, null, context.subscriptions);
     });
 
-    // WEBVIEW LABEL VIEW
+    // Register the command to open the Label View webview
     const disposeLabelView = vscode.commands.registerCommand('extension.openLabelView', () => {
         let editor = vscode.window.activeTextEditor;
         if (!editor) {
@@ -200,8 +224,8 @@ export function activate(context: vscode.ExtensionContext) {
                             gotoJumpLabel(lastActiveEditor, jump, skip, skipJump);
                         }
                         return;
-                    }
-                },
+                }
+            },
             undefined,
             context.subscriptions
         );
@@ -212,76 +236,33 @@ export function activate(context: vscode.ExtensionContext) {
         }, null, context.subscriptions);
     });
 
-    // Listen for active editor changes
+    // Listen for changes in the active editor
     const disposeActiveEditorChange = vscode.window.onDidChangeActiveTextEditor(editor => {
-        if (editor && editor.document.languageId === 'fanuctp_ls') {
-            lastActiveEditor = editor;
-            console.log('active: active editor changed');
-            const document = editor.document;
-
-            // Update the Webview content
-            if (labelPanel) {
-                const labels = extractLabels(document);
-                const jumps = extractJumps(document, labels);
-                const skips = extractSkips(document, labels);
-                const skipJumps = extractSkipJumps(document, labels);
-                labelPanel.webview.html = getLabelWebContent(document, labels, jumps, skips, skipJumps);
-
-                // Re-register the message handler for the newly opened doc in editor
-                labelPanel.webview.onDidReceiveMessage(
-                    message => {
-                        switch (message.command) {
-                            case 'gotoLabel':
-                                const label = message.label;
-                                editor = vscode.window.activeTextEditor;
-                                if (lastActiveEditor) {
-                                    gotoLabel(lastActiveEditor, label);
-                                }
-                                return;
-                            case 'gotoJumpLabel':
-                                const jump = message.jump;
-                                const skip = message.skip;
-                                const skipJump = message.skipJump;
-                                editor = vscode.window.activeTextEditor;
-                                if (lastActiveEditor) {
-                                    gotoJumpLabel(lastActiveEditor, jump, skip, skipJump);
-                                }
-                                return;
-                        }
-                    },
-                    undefined,
-                    context.subscriptions
-                );
-            }
-
-            if(namePanel){
-                const names = extractNames(document);
-                namePanel.webview.html = getNameWebContent(document, names);
-
-            // Handle messages from the webview
-            namePanel.webview.onDidReceiveMessage(
-                message => {
-                    switch (message.command) {
-                        case 'replaceName':
-                            const replaceIndex = parseInt(message.index, 10);
-                            const replaceName = message.newName;
-                            const replaceEditor = vscode.window.activeTextEditor;
-                            if (replaceEditor && lastActiveEditor) {
-                                const names = extractNames(lastActiveEditor.document);
-                                if (replaceIndex >= 0 && replaceIndex < names.length) {
-                                    const { name } = names[replaceIndex];
-                                    updateName(lastActiveEditor.document, name, replaceName);
-                                }
-                            }
-                            return;
-                    }
-                },
-                undefined,
-                context.subscriptions
-            );
+        if (editor) {
+            const currentFilePath = editor.document.uri.fsPath;
+            if (currentFilePath !== previousActiveEditorFilePath) {
+                lastActiveEditor = editor;
+                previousActiveEditorFilePath = currentFilePath;
+                // Handle the active editor change
+                handleActiveEditorChange(editor);
             }
         }
     });
+
+    function handleActiveEditorChange(editor: vscode.TextEditor) {
+        if (namePanel) {
+            const groupedNames = extractItemNames(editor.document);
+            namePanel.webview.html = getNameWebContent(editor.document, groupedNames, globalGroupState);
+        }
+        // Update the Webview content
+        if (labelPanel) {
+            const labels = extractLabels(editor.document);
+            const jumps = extractJumps(editor.document, labels);
+            const skips = extractSkips(editor.document, labels);
+            const skipJumps = extractSkipJumps(editor.document, labels);
+            labelPanel.webview.html = getLabelWebContent(editor.document, labels, jumps, skips, skipJumps);
+        }
+    }
 
     // Register the definition provider to open files
     context.subscriptions.push(vscode.languages.registerDefinitionProvider('fanuctp_ls', new CallDefinitionProvider()));
@@ -289,11 +270,10 @@ export function activate(context: vscode.ExtensionContext) {
     // Pushing all event listeners and commands to the context
     context.subscriptions.push(disposeOpen, disposeDebounceChange, 
         disposeLabelView, disposeNameView, disposeActiveEditorChange);
+}
 
-    }
 
 // ------------------EVENT HANDLER LOGIC-------------------
-
 
 // Updates the line numbers in the document
 // Called on document change in total line numbers
@@ -498,7 +478,6 @@ async function setLineNumbers(document: vscode.TextDocument) {
     //console.log(`set: Setting line numbers for ${fileName}`);
     //console.log('set: ' + JSON.stringify(fileDict[fileName]));
 }
-
 
 // Extract number from label
 function extractNumberFromLabel(label: string): string {
@@ -792,7 +771,7 @@ function getLabelWebContent(document: vscode.TextDocument, labels: string[],
                 padding: 10px;
             }
             h1 {
-                font-size: 1.5em;
+                font-size: 2em;
                 border-bottom: 2px solid #ddd;
                 padding-bottom: 10px;
             }
@@ -825,7 +804,7 @@ function getLabelWebContent(document: vscode.TextDocument, labels: string[],
             .jump-text {
                 margin: 0;
                 padding-left: 20px;
-                color: #808080; /* Grey color for jumps */
+                color: #808080; 
             }
         </style>
     </head>
@@ -857,10 +836,12 @@ function getLabelWebContent(document: vscode.TextDocument, labels: string[],
 }
 
 // Extract Reg and I/O names from the document
-function extractNames(document: vscode.TextDocument): { item: string, name: string }[] {
-    const combinedRegex = /\b(DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|VR|R)\b.*?:\s*(.*?)(?=\])\]/g;
+function extractItemNames(document: vscode.TextDocument): { [type: string]: { item: string, name: string }[] } {
+    //const combinedRegex = /\b(DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|VR|R)\b.*?:\s*(.*?)(?=\])\]/g;
+    const combinedRegex = /(DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|VR|(?<!P)R)\[\d*:.*?(?=\])\]/g;
     const nameRegex = /(?<=:)[^:\]]+(?=\])/;
-    const matches: { item: string, name: string }[] = [];
+    const groupedMatches: { [type: string]: { item: string, name: string }[] } = {};
+    const seenItems = new Set<string>();
 
     for (let i = 0; i < document.lineCount; i++) {
         const line = document.lineAt(i).text;
@@ -868,17 +849,45 @@ function extractNames(document: vscode.TextDocument): { item: string, name: stri
         if (match) {
             const item = match[0];
             const name = item.match(nameRegex)?.[0]?.trim() || '';
-            matches.push({ item, name });
+            if (!seenItems.has(item)) {
+                const match = item.match(/^[A-Z]+/);
+                const type = match ? match[0] : '';
+                if (!groupedMatches[type]) {
+                    groupedMatches[type] = [];
+                }
+                groupedMatches[type].push({ item, name });
+                seenItems.add(item);
+            }
         }
     }
 
-    return matches;
+    // Sort the items within each group by the number inside the item
+    for (const type in groupedMatches) {
+        groupedMatches[type].sort((a, b) => {
+            const matchA = a.item.match(/\[(\d+):/);
+            const numA = matchA ? parseInt(matchA[1], 10) : 0;
+            const matchB = b.item.match(/\[(\d+):/);
+            const numB = matchB ? parseInt(matchB[1], 10) : 0;
+            return numA - numB;
+        });
+    }
+
+    // Sort the groups by their keys
+    const sortedGroupedMatches: { [type: string]: { item: string, name: string }[] } = {};
+    Object.keys(groupedMatches).sort().forEach(key => {
+        sortedGroupedMatches[key] = groupedMatches[key];
+    });
+
+    return sortedGroupedMatches;
 }
 
-// Function to handle name updates
-function updateName(document: vscode.TextDocument, oldName: string, newName: string) {
+// Function to handle name updates in a single document
+function updateName(document: vscode.TextDocument, oldItem: string, oldName: string, newName: string) {
     const text = document.getText();
-    const newText = text.replace(new RegExp(oldName, 'g'), newName);
+    const oldItemRegex = new RegExp(`${oldItem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
+    const newItemText = oldItem.replace(oldName, newName);
+    const newText = text.replace(oldItemRegex, newItemText);
+    
     const edit = new vscode.WorkspaceEdit();
     const fullRange = new vscode.Range(
         document.positionAt(0),
@@ -888,8 +897,21 @@ function updateName(document: vscode.TextDocument, oldName: string, newName: str
     vscode.workspace.applyEdit(edit);
 }
 
+// Function to handle name updates in multiple documents in a directory
+async function updateNameInDirectory(directory: vscode.Uri, oldItem: string, oldName: string, newName: string) {
+    const files = await vscode.workspace.findFiles(new vscode.RelativePattern(directory, '*'));
+    for (const file of files) {
+        const document = await vscode.workspace.openTextDocument(file);
+        const text = document.getText();
+        const oldItemRegex = new RegExp(`${oldItem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
+        if (oldItemRegex.test(text)) {
+            updateName(document, oldItem, oldName, newName);
+        }
+    }
+}
+
 // Function to generate the HTML content for the Name Webview
-function getNameWebContent(document: vscode.TextDocument, names: { item: string, name: string }[]): string {
+function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type: string]: { item: string, name: string }[] }, groupState: { [key: string]: boolean }): string {
 
     // Get the file name of the document
     const fileName = path.basename(document.fileName);
@@ -898,6 +920,36 @@ function getNameWebContent(document: vscode.TextDocument, names: { item: string,
     <html lang="en">
     </html>`;
     }
+
+    // Generate HTML for each group
+    let globalIndex = 0;
+    const groupHtml = Object.keys(groupedNames).map(group => `
+        <details ${groupState[group] ? 'open' : ''}>
+            <summary>${group}</summary>
+            <ul>
+                ${groupedNames[group].map(({ item, name }) => {
+                    const itemDetails = item.split(':')[0];
+                    const itemType = itemDetails.split('[')[0];
+                    const itemNumber = itemDetails.split('[')[1];
+                    const index = globalIndex++;
+                    return `
+                        <li data-index="${index}">
+                            <div class="name-container">
+                                <span class="item-type">${itemType}</span>
+                                <span class="name-text">[</span>
+                                <span class="item-number">${itemNumber}</span>
+                                <span class="name-text">:</span>
+                                <input class="name-input" type="text" value="${name}" data-index="${index}">
+                            </div>
+                            <div class="fields-container">
+                                <button class="button replace-button" data-index="${index}">Replace</button>
+                            </div>
+                        </li>
+                    `;
+                }).join('')}
+            </ul>
+        </details>
+    `).join('');
 
     return `<!DOCTYPE html>
     <html lang="en">
@@ -908,78 +960,150 @@ function getNameWebContent(document: vscode.TextDocument, names: { item: string,
         <style>
             body {
                 font-family: Arial, sans-serif;
-                padding: 10px;
+                padding: 20px;
+                background-color: rgb(36, 36, 36);
+                color: #fff;
             }
             h1 {
-                font-size: 1.5em;
-                border-bottom: 2px solid #ddd;
+                font-size: 2em;
                 padding-bottom: 10px;
+                margin-bottom: 20px;
             }
             ul {
                 list-style-type: none;
                 padding: 0;
             }
             li {
-                padding: 10px;
+                font-size: 1.25em;
+                padding: 15px;
+                margin-bottom: 10px;
                 border: 1px solid #ddd;
+                border-radius: 5px;
+                background-color: rgb(36, 36, 36);
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                flex-wrap: wrap; 
             }
             li:hover {
-                background-color: #f0f0f0;
+                background-color: #000000;
+            }
+            .header-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+            .header-buttons {
+                display: flex;
+                gap: 10px;
             }
             .name-container {
                 display: flex;
-                flex-direction: row;
                 align-items: center;
+                gap: 2px;
+                flex: 1; 
+                min-width: 200px; 
+            }
+            .fields-container {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-shrink: 0; 
             }
             .name-text {
-                margin: 0;
-                margin-right: 10px;
+                color: rgb(255, 255, 255);
+            }
+            .item-type {
+                font-weight: bold;
+                color: #FFFF2C;
+                font-size: 1em; 
+            }
+            .item-number {
+                font-weight: bold;
+                color: #57F8FF;
+                font-size: 1em; 
             }
             .name-input {
                 border: 1px solid #ddd;
+                border-radius: 3px;
+                width: 200px;
+                background-color: #333;
+                color: #fff;
                 padding: 5px;
-                margin-right: 10px;
+                font-size: 1em;
             }
             .button {
                 padding: 5px 10px;
-                margin-right: 5px;
                 cursor: pointer;
                 border: none;
                 background-color: #007acc;
-                color: white;
                 border-radius: 3px;
+                transition: background-color 0.3s;
+                flex-shrink: 0; 
             }
             .button:hover {
-                background-color: #005f99;
+                background-color: rgb(1, 77, 124);
+            }
+            summary {
+                font-size: 1.5em; 
+                cursor: pointer;
             }
         </style>
     </head>
     <body>
-        <h1>Register and I/O Names</h1>
-        <ul>
-            ${names.map(({ item, name }, index) => `
-                <li data-index="${index}">
-                    <div class="name-container">
-                        <span class="name-text">${item}</span>
-                        <input class="name-input" type="text" placeholder="New name" data-index="${index}">
-                        <button class="button replace-button" data-index="${index}">Replace</button>
-                    </div>
-                </li>
-            `).join('')}
-        </ul>
+        <div class="header-container">
+            <h1>Register and I/O Names</h1>
+            <div class="header-buttons">
+                <button class="button refresh-button">Refresh</button>
+            </div>
+            <label>
+                <input type="checkbox" id="directory-checkbox"> Apply to entire directory
+            </label>
+        </div>
+        ${groupHtml}
         <script>
             const vscode = acquireVsCodeApi();
+            const groupState = {};
+
+            document.querySelectorAll('details').forEach(details => {
+                details.addEventListener('toggle', () => {
+                    const group = details.querySelector('summary').textContent;
+                    groupState[group] = details.open;
+                    vscode.setState({ groupState });
+                    vscode.postMessage({ command: 'updateGroupState', groupState });
+                });
+            });
+
             document.querySelectorAll('.replace-button').forEach(button => {
                 button.addEventListener('click', (event) => {
                     const index = event.target.getAttribute('data-index');
                     const input = document.querySelector(\`input[data-index="\${index}"]\`);
                     const newName = input.value;
-                    vscode.postMessage({ command: 'replaceName', index, newName });
+                    const applyToDirectory = document.getElementById('directory-checkbox').checked;
+                    if (newName) {
+                        vscode.postMessage({ command: 'updateName', index, newName, applyToDirectory });
+                    }
                 });
             });
+
+            document.querySelectorAll('.refresh-button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const applyToDirectory = document.getElementById('directory-checkbox').checked;
+                    vscode.postMessage({ command: 'refresh', applyToDirectory });
+                });
+            });
+
+            const state = vscode.getState();
+            if (state && state.groupState) {
+                Object.keys(state.groupState).forEach(group => {
+                    const details = document.querySelector(\`details summary:contains("\${group}")\`).parentElement;
+                    if (details) {
+                        details.open = state.groupState[group];
+                    }
+                });
+            }
         </script>
     </body>
     </html>`;

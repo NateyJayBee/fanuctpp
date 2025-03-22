@@ -33,7 +33,7 @@
 				},			
 				{
 					"name": "constant.language.fanuctp_ls",
-					"match": "\\b(UTOOL_NUM|UFRAME_NUM|UTOOL|UFRAME|OVERRIDE|RSR|UALM|PAYLOAD|TIMER|DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|PR|VR|UF|UT|CONFIG|X|Y|Z|W|P|R|J1|J2|J3|J4|J5|J6|U|T|N)\\b"
+					"match": "\\b(UTOOL_NUM|UFRAME_NUM|UTOOL|UFRAME|OVERRIDE|RSR|UALM|PAYLOAD|TIMER|DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|PR|VR|UF|UT|CONFIG|X|Y|Z|W|P|R|J1|J2|J3|J4|J5|J6|U|T|N|ABS)\\b"
 				}
 			]
 		},
@@ -53,7 +53,7 @@
 				},
 				{
 					"name": "keyword.adv_control.fanuctp_ls",
-					"match": "\\b(VISION|RUN_FIND|GET_OFFSET|GET_PASSFAIL|GET_NFOUND)\\b"
+					"match": "\\b(VISION|RUN_FIND|GET_OFFSET|GET_PASSFAIL|GET_NFOUND)|(\\.OFFSET)\\b"
 				},
 				{
 					"name": "keyword.movetype.fanuctp_ls",
