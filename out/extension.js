@@ -240,6 +240,9 @@ function activate(context) {
     function handleActiveEditorChange(editor) {
         if (namePanel) {
             const groupedNames = extractItemNames(editor.document);
+            //const state = namePanel.webview.getState();
+            //const groupState = state ? state.groupState : globalGroupState;
+            namePanel.webview.postMessage({ command: 'updateGroupState', groupState: globalGroupState });
             namePanel.webview.html = getNameWebContent(editor.document, groupedNames, globalGroupState);
         }
         // Update the Webview content
@@ -676,48 +679,86 @@ function getLabelWebContent(document, labels, jumps, skips, skipJumps) {
         <style>
             body {
                 font-family: Arial, sans-serif;
-                padding: 10px;
+                padding: 20px;
+                background-color: rgb(36, 36, 36);
+                tesx: rgb(36, 36, 36);
             }
             h1 {
                 font-size: 2em;
-                border-bottom: 2px solid #ddd;
-                padding-bottom: 10px;
+                margin: 0;
             }
             ul {
                 list-style-type: none;
                 padding: 0;
             }
             li {
-                cursor: pointer;
-                padding: 10px;
+                font-size: 1.25em;
+                padding: 7.5px;
+                margin-bottom: 5px;
                 border: 1px solid #ddd;
+                border-radius: 5px;
+                background-color: rgb(36, 36, 36);
                 display: flex;
                 align-items: center;
+                justify-content: space-between;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                flex-wrap: wrap; 
             }
             li:hover {
                 background-color: #000000;
             }
-            .icon {
-                font-size: 1.5em;
-                margin-right: 10px;
+            .header-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+            }
+            .header-buttons {
+                display: flex;
+                gap: 10px;
             }
             .label-container {
                 display: flex;
-                flex-direction: row;
                 align-items: flex-start;
+                gap: 2px;
+                flex: 1; 
+                min-width: 200px; 
+                cursor: pointer;
             }
             .label-text {
-                margin: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                flex: 1; 
+                min-width: 200px; 
+                cursor: pointer;
             }
             .jump-text {
                 margin: 0;
-                padding-left: 20px;
-                color: #808080; 
+                padding-left: 10px;
+                color:rgb(182, 182, 182); 
+                display: inline;
+                cursor: pointer;
+            }
+            .icon {
+                padding-top: 7.5px;
+                font-size: 1.5em;
+                margin-right: 10px;
+                margin-right: 10px;
+            }
+            hr {
+                border: 0;
+                height: 1px;
+                background: #fff;
+                margin: 10px 0;
             }
         </style>
     </head>
     <body>
-        <h1>Labels</h1>
+        <div class="header-container">
+            <h1>Labels</h1>
+        </div>
+        <hr>
         <ul>
             ${labelList}
         </ul>
@@ -745,8 +786,7 @@ function getLabelWebContent(document, labels, jumps, skips, skipJumps) {
 // Extract Reg and I/O names from the document
 function extractItemNames(document) {
     var _a, _b;
-    //const combinedRegex = /\b(DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|VR|R)\b.*?:\s*(.*?)(?=\])\]/g;
-    const combinedRegex = /(DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|AR|SR|GO|F|M|VR|(?<!P)R)\[\d*:.*?(?=\])\]/g;
+    const combinedRegex = /(DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|SIR|CPC|CSC|JPC|JSC|NSI|AR|SR|GO|F|M|VR|(?<!P)R)\[\d*:.*?(?=\])\]/g;
     const nameRegex = /(?<=:)[^:\]]+(?=\])/;
     const groupedMatches = {};
     const seenItems = new Set();
@@ -809,6 +849,37 @@ function updateNameInDirectory(directory, oldItem, oldName, newName) {
         }
     });
 }
+// Mapping of keys to descriptive names
+const keyToString = {
+    "F": "Flags",
+    "M": "Markers",
+    "R": "Registers",
+    "SR": "String Registers",
+    "VR": "Visual Registers",
+    "AR": "Function Arguments",
+    "DI": "Digital Inputs",
+    "DO": "Digital Outputs",
+    "GI": "Group Inputs",
+    "GO": "Group Outputs",
+    "RI": "Robot Inputs",
+    "RO": "Robot Outputs",
+    "UI": "User Op Panel Inputs",
+    "UO": "User Op Panel Outputs",
+    "SI": "Serial Inputs",
+    "SO": "Serial Output",
+    "SPI": "Safe Peripheral Inputs",
+    "SPO": "Safe Peripheral Outputs",
+    "SSI": "Safe System Inputs",
+    "SSO": "Safe System Outputs",
+    "CSI": "CIP Safety Inputs",
+    "CSO": "CIP Safety Outputs",
+    "SIR": "Safe Internal Relays",
+    "CPC": "Cart. Pos. Checks",
+    "CSC": "Cart. Speed Checks",
+    "JPC": "Joint Pos. Checks",
+    "JSC": "Joint Speed Checks",
+    "NSI": "Non-Safety Inputs"
+};
 // Function to generate the HTML content for the Name Webview
 function getNameWebContent(document, groupedNames, groupState) {
     // Get the file name of the document
@@ -820,133 +891,144 @@ function getNameWebContent(document, groupedNames, groupState) {
     }
     // Generate HTML for each group
     let globalIndex = 0;
-    const groupHtml = Object.keys(groupedNames).map(group => `
-        <details ${groupState[group] ? 'open' : ''}>
-            <summary>${group}</summary>
-            <ul>
-                ${groupedNames[group].map(({ item, name }) => {
-        const itemDetails = item.split(':')[0];
-        const itemType = itemDetails.split('[')[0];
-        const itemNumber = itemDetails.split('[')[1];
-        const index = globalIndex++;
+    const groupHtml = Object.keys(groupedNames).map(group => {
+        const groupDescription = keyToString[group] || group;
         return `
-                        <li data-index="${index}">
-                            <div class="name-container">
-                                <span class="item-type">${itemType}</span>
-                                <span class="name-text">[</span>
-                                <span class="item-number">${itemNumber}</span>
-                                <span class="name-text">:</span>
-                                <input class="name-input" type="text" value="${name}" data-index="${index}">
-                            </div>
-                            <div class="fields-container">
-                                <button class="button replace-button" data-index="${index}">Replace</button>
-                            </div>
-                        </li>
-                    `;
-    }).join('')}
-            </ul>
-        </details>
-    `).join('');
+            <details ${groupState[group] ? 'open' : ''} data-group="${group}">
+                <summary>${groupDescription}</summary>
+                <ul>
+                    ${groupedNames[group].map(({ item, name }) => {
+            const itemDetails = item.split(':')[0];
+            const itemType = itemDetails.split('[')[0];
+            const itemNumber = itemDetails.split('[')[1];
+            const index = globalIndex++;
+            return `
+                            <li data-index="${index}">
+                                <div class="name-container">
+                                    <span class="item-type">${itemType}</span>
+                                    <span class="name-text">[</span>
+                                    <span class="item-number">${itemNumber}</span>
+                                    <span class="name-text">:</span>
+                                    <input class="name-input" type="text" value="${name}" data-index="${index}">
+                                </div>
+                                <div class="fields-container">
+                                    <button class="button replace-button" data-index="${index}">Replace</button>
+                                </div>
+                            </li>
+                        `;
+        }).join('')}
+                </ul>
+            </details>
+        `;
+    }).join('');
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Register and I/O Names</title>
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                padding: 20px;
-                background-color: rgb(36, 36, 36);
-                color: #fff;
-            }
-            h1 {
-                font-size: 2em;
-                padding-bottom: 10px;
-                margin-bottom: 20px;
-            }
-            ul {
-                list-style-type: none;
-                padding: 0;
-            }
-            li {
-                font-size: 1.25em;
-                padding: 15px;
-                margin-bottom: 10px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                background-color: rgb(36, 36, 36);
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-                flex-wrap: wrap; 
-            }
-            li:hover {
-                background-color: #000000;
-            }
-            .header-container {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 20px;
-            }
-            .header-buttons {
-                display: flex;
-                gap: 10px;
-            }
-            .name-container {
-                display: flex;
-                align-items: center;
-                gap: 2px;
-                flex: 1; 
-                min-width: 200px; 
-            }
-            .fields-container {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                flex-shrink: 0; 
-            }
-            .name-text {
-                color: rgb(255, 255, 255);
-            }
-            .item-type {
-                font-weight: bold;
-                color: #FFFF2C;
-                font-size: 1em; 
-            }
-            .item-number {
-                font-weight: bold;
-                color: #57F8FF;
-                font-size: 1em; 
-            }
-            .name-input {
-                border: 1px solid #ddd;
-                border-radius: 3px;
-                width: 200px;
-                background-color: #333;
-                color: #fff;
-                padding: 5px;
-                font-size: 1em;
-            }
-            .button {
-                padding: 5px 10px;
-                cursor: pointer;
-                border: none;
-                background-color: #007acc;
-                border-radius: 3px;
-                transition: background-color 0.3s;
-                flex-shrink: 0; 
-            }
-            .button:hover {
-                background-color: rgb(1, 77, 124);
-            }
-            summary {
-                font-size: 1.5em; 
-                cursor: pointer;
-            }
-        </style>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 20px;
+                    background-color: rgb(36, 36, 36);
+                    color: #fff;
+                }
+                h1 {
+                    font-size: 2em;
+                    margin: 0;
+                }
+                ul {
+                    list-style-type: none;
+                    padding: 0;
+                }
+                li {
+                    font-size: 1.25em;
+                    padding: 15px;
+                    margin-bottom: 10px;
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    background-color: rgb(36, 36, 36);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                    flex-wrap: wrap; 
+                }
+                li:hover {
+                    background-color: #000000;
+                }
+                .header-container {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 10px;
+                }
+                .header-buttons {
+                    display: flex;
+                    gap: 10px;
+                }
+                .name-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 2px;
+                    flex: 1; 
+                    min-width: 200px; 
+                }
+                .fields-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    flex-shrink: 0; 
+                }
+                .name-text {
+                    color: rgb(255, 255, 255);
+                }
+                .item-type {
+                    font-weight: bold;
+                    color: #FFFF2C;
+                    font-size: 1em; 
+                }
+                .item-number {
+                    font-weight: bold;
+                    color: #57F8FF;
+                    font-size: 1em; 
+                }
+                .name-input {
+                    border: 1px solid #ddd;
+                    border-radius: 3px;
+                    width: 150px;
+                    background-color: #333;
+                    color: #fff;
+                    padding: 5px;
+                    font-size: 1em;
+                    min-width: 100px;
+                }
+                .button {
+                    padding: 5px 10px;
+                    cursor: pointer;
+                    border: none;
+                    background-color: #007acc;
+                    border-radius: 3px;
+                    transition: background-color 0.3s;
+                    flex-shrink: 0; 
+                }
+                .button:hover {
+                    background-color: rgb(1, 77, 124);
+                }
+                summary {
+                    font-size: 1.5em; 
+                    cursor: pointer;
+                }
+                .checkbox-container {
+                    margin-top: 10px;
+                    font-size: 1.25em;
+                }
+                .checkbox-container input {
+                    transform: scale(1.5);
+                    margin-right: 10px;
+                }
+            </style>
     </head>
     <body>
         <div class="header-container">
@@ -954,18 +1036,21 @@ function getNameWebContent(document, groupedNames, groupState) {
             <div class="header-buttons">
                 <button class="button refresh-button">Refresh</button>
             </div>
-            <label>
-                <input type="checkbox" id="directory-checkbox"> Apply to entire directory
-            </label>
         </div>
+        <hr>
+        <label class="checkbox-container">
+            <input type="checkbox" id="directory-checkbox"> Apply to entire directory
+        </label>
+        <hr>
         ${groupHtml}
         <script>
             const vscode = acquireVsCodeApi();
-            const groupState = {};
+            const state = vscode.getState();
+            const groupState = state ? state.groupState : {};
 
             document.querySelectorAll('details').forEach(details => {
                 details.addEventListener('toggle', () => {
-                    const group = details.querySelector('summary').textContent;
+                    const group = details.getAttribute('data-group');
                     groupState[group] = details.open;
                     vscode.setState({ groupState });
                     vscode.postMessage({ command: 'updateGroupState', groupState });
@@ -991,7 +1076,6 @@ function getNameWebContent(document, groupedNames, groupState) {
                 });
             });
 
-            const state = vscode.getState();
             if (state && state.groupState) {
                 Object.keys(state.groupState).forEach(group => {
                     const details = document.querySelector(\`details summary:contains("\${group}")\`).parentElement;
@@ -1005,4 +1089,7 @@ function getNameWebContent(document, groupedNames, groupState) {
     </html>`;
 }
 function deactivate() { }
+function length(arg0) {
+    throw new Error('Function not implemented.');
+}
 //# sourceMappingURL=extension.js.map
