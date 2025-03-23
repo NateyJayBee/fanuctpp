@@ -1,14 +1,16 @@
 # Change Log
 
-## [0.0.3] - 2025-01-27
+## [1.0.0] - 2025-03-22
 ### Added
+- Register and I/O Names Webview
 - Theme to include .DT and .CF files.
 
 ### Changed
-- Project directory structure
+- Label Webview Style
+- Logo for reasons
 
 ### Fixed
-- 
+- Webview Message Handling
 
 ## [0.0.2] - 2025-01-27
 ### Added

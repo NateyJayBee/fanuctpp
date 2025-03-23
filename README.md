@@ -1,18 +1,18 @@
-# fanuctpp README
+# CodeFanuc TP Assist README
 
-This extension is for Fanuc proprietary Teach Pendant Programming. It contains a defined syntax and custom theme, as well as multiple coding efficiency, autofill features, commands, and interactive webviews.
+This extension is to assist in software development that includes Fanuc proprietary Teach Pendant Programming. It contains a defined syntax and custom theme, as well as multiple coding efficiency, autofill features, commands, and interactive webviews.
 
 ## Features
 
 - **Automatic Line Renumbering**: Automatically renumbers in-text lines in .ls files when changes are made.
 - **Automatic Semicolon Placement**: Automatically ends in-text lines in .ls files with a semicolon.
 - **Label Webview Command**: View all the Labels and Jump Labels in your code and move to the line number.
-- **Ctrl+Click to Open Filename**: Automatically open a file through text by clicking on it while holding ctrl.
+- **Register & I/O Webview Command**: View all of the LS file data types and I/O in your active file. Adds button to replace name in the active file, or all in directory.  
+- **CodeFanuc Theme**: Custom theme for LS, KL, DT, and CF filetypes.
 
-- **Themed LS Files**: Custom theme for .LS files
-- **Themed KL Files**: Custom theme for .KL files
-- **Themed DT Files**: Custom theme for .DT files
-- **Themed CF Files**: Custom theme for .CF files
+![CodeFanuc Theme Screenshot](images/ThemeExample.png)
+![Label Webview Screenshot](images/LabelView.png)
+![Register & I/O Webview Screenshot](images/NameView.png)
 
 ## Requirements
 
@@ -20,11 +20,13 @@ VS Code 1.95.0
 
 ## Usage
 
-- **Fanuc Theme**: Set using the Color Theme option in VS Code.
+- **CodeFanuc Theme**: Set using the Color Theme option in VS Code.
 - **Automatic Line Renumbering**: This feature is enabled by default.
     CAN BE DISABLED with user setting "autoLineRenumber": false
+- **Ctrl+Click to Open Filename**: Automatically open a file through text by clicking on it while holding ctrl.
 - **Automatic Semicolon Placement**: Attached to Line Renumbering.
-- **Label Webview Command**: Use the command `fanuctpp.openLabelView` to open the label webview. Ctrl+Shift+P
+- **Label Webview Command**: Use the command `fanuctpp.openLabelView` to open this webview. Ctrl+Shift+P
+- **Register & I/O Names Webview Command**: Use the command `fanuctpp.openNameView` to open this webview. Ctrl+Shift+P
 - **Ctrl+Click to Open Filename**: Ctrl+click on a program name in `CALL/RUN 'programName'` to open the corresponding file if it exists in the same directory.
 
 ## Installation
@@ -45,8 +47,11 @@ To see current issues and to report issues, please visit our [GitHub Issues Page
 
 ## Release Notes
 
-Fanuctpp release 0.0.3
+Fanuctpp release 1.0.0
 - Repurposed existing syntax for (.DT) and (.CF) files
+- Created name webview and command to open it
+- Minor syntax additions to (.LS) files
+- New icon
 
 Fanuctpp release 0.0.2
 - Created themed syntax for (.KL) files

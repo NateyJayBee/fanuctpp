@@ -1,8 +1,8 @@
 {
   "name": "fanuctpp",
-  "displayName": "Advanced Fanuc TP",
+  "displayName": "CodeFanuc TP Assist",
   "description": "Advanced Language extension for Fanuc Teach Pendant Programming",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "publisher": "NathanBadanjek",
   "main": "./out/extension.js",
   "scripts": {
@@ -125,9 +125,9 @@
     ],
     "themes": [
         {
-            "label": "Fanuc Theme",
+            "label": "CodeFanuc Theme",
             "uiTheme": "vs-dark",
-            "path": "./themes/fanuc_theme.tmTheme.json"
+            "path": "./themes/codefanuc_theme.tmTheme.json"
         }
     ]
   },
@@ -137,5 +137,5 @@
           "path": "./completions/fanuctp_kl_completions.json"
       }
   ],
-  "icon": "images/FanucLogo.png"
+  "icon": "images/IconTwo.png"
 }
