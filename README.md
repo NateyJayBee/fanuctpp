@@ -10,9 +10,20 @@ This extension is to assist in software development that includes Fanuc propriet
 - **Register & I/O Webview Command**: View all of the LS file data types and I/O in your active file. Adds button to replace name in the active file, or all in directory.  
 - **CodeFanuc Theme**: Custom theme for LS, KL, DT, and CF filetypes.
 
-![CodeFanuc Theme Screenshot](images/ThemeExample.png)
-![Label Webview Screenshot](images/LabelView.png)
-![Register & I/O Webview Screenshot](images/NameView.png)
+<div align="center">
+  <h1><strong>CodeFanuc Theme Screenshot</strong></h1>
+  <img src="images/ThemeExample.png" alt="CodeFanuc Theme Screenshot" title="CodeFanuc Theme Screenshot" />
+</div>
+
+<div align="center">
+  <h1><strong>Label Webview Screenshot</strong></h1>
+  <img src="images/LabelView.png" alt="Label Webview Screenshot" title="Label Webview Screenshot" />
+</div>
+
+<div align="center">
+  <h1><strong>Register & I/O Webview Screenshot</strong></h1>
+  <img src="images/NameView.png" alt="Register & I/O Webview Screenshot" title="Register & I/O Webview Screenshot" />
+</div>
 
 ## Requirements
 
@@ -51,7 +62,7 @@ Fanuctpp release 1.0.0
 - Repurposed existing syntax for (.DT) and (.CF) files
 - Created name webview and command to open it
 - Minor syntax additions to (.LS) files
-- New icon
+- New icon and name
 
 Fanuctpp release 0.0.2
 - Created themed syntax for (.KL) files
