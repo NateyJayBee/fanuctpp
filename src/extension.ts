@@ -163,6 +163,25 @@ export function activate(context: vscode.ExtensionContext) {
                         }
                     }
                     return;
+                case 'gotoLine':
+                    const gotoIndex = parseInt(message.index, 10);
+                    const lineIndex = parseInt(message.lineIndex, 10);
+                    const direction = message.direction;
+                    const gotoEditor = lastActiveEditor;
+                    if (gotoEditor) {
+                        const groupedNames = extractItemNames(gotoEditor.document);
+                        const names = Object.values(groupedNames).flat();
+                        if (gotoIndex >= 0 && gotoIndex < names.length) {
+                            let targetLine = names[gotoIndex].lines[lineIndex];
+                            if (direction === 'up' && gotoIndex > 0) {
+                                targetLine = names[gotoIndex - 1].lines[lineIndex];
+                            } else if (direction === 'down' && gotoIndex < names.length - 1) {
+                                targetLine = names[gotoIndex + 1].lines[lineIndex];
+                            }
+                            gotoItemLine(gotoEditor.document, targetLine);
+                        }
+                    }
+                    return;
                 case 'updateGroupState':
                     globalGroupState = message.groupState;
                     return;
@@ -334,6 +353,8 @@ async function updateLineNumbers(document: vscode.TextDocument) {
     const moveRegex = /(^\s*(\d{1,4}):|\s+)\s*[JL]\s/;
     // Line with comma at end, code taking up 2 lines
     const contLineRegex = /^\s\s\s\s:/;
+    // Line before continue line
+    const preContLineRegex = /^\s*(\d{1,4}):.*,$/;
 
     // SKIPPED LINES
     let diff = Math.abs(totalLines - processedLines);
@@ -356,13 +377,16 @@ async function updateLineNumbers(document: vscode.TextDocument) {
             let tpLineNum = i + 1 - doubleLineCnt;
             let tpLineText = tpLineNum.toString().padStart(4, ' ');
 
-            // Check if the line is blank
             if (contLineRegex.test(lineText)) {
                 doubleLineCnt++;
                 continue;
             }
+            // Check if the line is blank
             if (blankLineRegex.test(lineText)) {
                 lineText = tpLineText + ":   ;";
+            }
+            else if (preContLineRegex.test(lineText)) {
+                lineText = tpLineText + ":" + lineText.slice(5).trimEnd() ;
             }
             else if (betweenSemiRegex.test(lineText)) {
                 const match = lineText.match(betweenSemiRegex);
@@ -878,10 +902,10 @@ function getLabelWebContent(document: vscode.TextDocument, labels: string[],
 }
 
 // Extract Reg and I/O names from the document
-function extractItemNames(document: vscode.TextDocument): { [type: string]: { item: string, name: string }[] } {
+function extractItemNames(document: vscode.TextDocument): { [type: string]: { item: string, name: string, lines: number[] }[] } {
     const combinedRegex = /(DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|SIR|CPC|CSC|JPC|JSC|NSI|AR|SR|GO|F|M|VR|(?<!P)R)\[\d*:.*?(?=\])\]/g;
     const nameRegex = /(?<=:)[^:\]]+(?=\])/;
-    const groupedMatches: { [type: string]: { item: string, name: string }[] } = {};
+    const groupedMatches: { [type: string]: { item: string, name: string, lines: number[] }[] } = {};
     const seenItems = new Set<string>();
 
     for (let i = 0; i < document.lineCount; i++) {
@@ -890,14 +914,19 @@ function extractItemNames(document: vscode.TextDocument): { [type: string]: { it
         if (match) {
             const item = match[0];
             const name = item.match(nameRegex)?.[0]?.trim() || '';
+            const matchItem = item.match(/^[A-Z]+/);
+            const type = matchItem ? matchItem[0] : '';
             if (!seenItems.has(item)) {
-                const match = item.match(/^[A-Z]+/);
-                const type = match ? match[0] : '';
                 if (!groupedMatches[type]) {
                     groupedMatches[type] = [];
                 }
-                groupedMatches[type].push({ item, name });
+                groupedMatches[type].push({ item, name, lines: [i+1]  });
                 seenItems.add(item);
+            } else {
+                const existingItem = groupedMatches[type].find(entry => entry.item === item);
+                if (existingItem) {
+                    existingItem.lines.push(i+1);
+                }
             }
         }
     }
@@ -914,7 +943,7 @@ function extractItemNames(document: vscode.TextDocument): { [type: string]: { it
     }
 
     // Sort the groups by their keys
-    const sortedGroupedMatches: { [type: string]: { item: string, name: string }[] } = {};
+    const sortedGroupedMatches: { [type: string]: { item: string, name: string, lines: number[] }[] } = {};
     Object.keys(groupedMatches).sort().forEach(key => {
         sortedGroupedMatches[key] = groupedMatches[key];
     });
@@ -936,6 +965,24 @@ function updateName(document: vscode.TextDocument, oldItem: string, oldName: str
     );
     edit.replace(document.uri, fullRange, newText);
     vscode.workspace.applyEdit(edit);
+}
+
+function gotoItemLine(document: vscode.TextDocument, lineNum: number) {
+    const position = new vscode.Position(lineNum - 1, 0);
+    const editor = lastActiveEditor;
+    if (editor) {
+        editor.selection = new vscode.Selection(position, position);
+        editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.AtTop);
+    
+        // Apply the highlight decoration
+        const range = new vscode.Range(position, new vscode.Position(lineNum, document.lineAt(lineNum).text.length));
+        editor.setDecorations(highlightDecorationType, [range]);
+    
+        // Remove the highlight decoration after a short delay
+        setTimeout(() => {
+            editor.setDecorations(highlightDecorationType, []);
+        }, 500);
+    }
 }
 
 // Function to handle name updates in multiple documents in a directory
@@ -984,7 +1031,7 @@ const keyToString: { [key: string]: string } = {
 }
 
 // Function to generate the HTML content for the Name Webview
-function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type: string]: { item: string, name: string }[] }, groupState: { [key: string]: boolean }): string {
+function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type: string]: { item: string, name: string, lines: number[] }[] }, groupState: { [key: string]: boolean }): string {
 
     // Get the file name of the document
     const fileName = path.basename(document.fileName);
@@ -1002,13 +1049,15 @@ function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type:
             <details ${groupState[group] ? 'open' : ''} data-group="${group}">
                 <summary>${groupDescription}</summary>
                 <ul>
-                    ${groupedNames[group].map(({ item, name }) => {
+                    ${groupedNames[group].map(({ item, name, lines }) => {
                         const itemDetails = item.split(':')[0];
                         const itemType = itemDetails.split('[')[0];
                         const itemNumber = itemDetails.split('[')[1];
+                        const lineNumbers = lines.map(line => `<span class="line-number" data-line="${line}">${line}</span>`).join(', ');
                         const index = globalIndex++;
+                        const lineIndex = 0
                         return `
-                            <li data-index="${index}">
+                            <li data-index="${index}" data-line-index=${0}>
                                 <div class="name-container">
                                     <span class="item-type">${itemType}</span>
                                     <span class="name-text">[</span>
@@ -1017,6 +1066,8 @@ function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type:
                                     <input class="name-input" type="text" value="${name}" data-index="${index}">
                                 </div>
                                 <div class="fields-container">
+                                    <button class="button up-button" data-index="${index}">↑</button>
+                                    <button class="button down-button" data-index="${index}">↓</button>
                                     <button class="button replace-button" data-index="${index}">Replace</button>
                                 </div>
                             </li>
@@ -1134,6 +1185,9 @@ function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type:
                     transform: scale(1.5);
                     margin-right: 10px;
                 }
+                .line-number {
+                    background-color: rgb(36, 36, 36);
+                }
             </style>
     </head>
     <body>
@@ -1181,6 +1235,30 @@ function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type:
                     vscode.postMessage({ command: 'refresh', applyToDirectory });
                 });
             });
+
+            document.querySelectorAll('.up-button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = event.target.getAttribute('data-index');
+                    let lineIndex = parseInt(listItem.getAttribute('data-line-index'), 10);
+                    if (lineIndex > 0) {
+                        lineIndex++;
+                        listItem.setAttribute('data-line-index', lineIndex);
+                        vscode.postMessage({ command: 'gotoLine', index, lineIndex });
+                    }
+                });
+            });
+
+            document.querySelectorAll('.down-button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = event.target.getAttribute('data-index');
+                    let lineIndex = parseInt(listItem.getAttribute('data-line-index'), 10);
+                    if (lineIndex > 0) {
+                        lineIndex--;
+                        listItem.setAttribute('data-line-index', lineIndex);
+                        vscode.postMessage({ command: 'gotoLine', index, lineIndex });
+                    }
+                });
+            }); 
 
             if (state && state.groupState) {
                 Object.keys(state.groupState).forEach(group => {
