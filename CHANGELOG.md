@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.0.2] - 2025-04-02
+### Fixed
+- Line continuations with comma at the end wont have semicolon
+
+## [1.0.1] - 2025-03-23
+### Changed
+- Logo for reasons
+
 ## [1.0.0] - 2025-03-22
 ### Added
 - Register and I/O Names Webview
@@ -7,7 +15,6 @@
 
 ### Changed
 - Label Webview Style
-- Logo for reasons
 
 ### Fixed
 - Webview Message Handling
