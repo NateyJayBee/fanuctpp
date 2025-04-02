@@ -307,6 +307,8 @@ function updateLineNumbers(document) {
         const moveRegex = /(^\s*(\d{1,4}):|\s+)\s*[JL]\s/;
         // Line with comma at end, code taking up 2 lines
         const contLineRegex = /^\s\s\s\s:/;
+        // Line before continue line
+        const preContLineRegex = /^\s*(\d{1,4}):.*,$/;
         // SKIPPED LINES
         let diff = Math.abs(totalLines - processedLines);
         if (diff >= 1) {
@@ -323,13 +325,15 @@ function updateLineNumbers(document) {
                 let lineText = tpLines[i];
                 let tpLineNum = i + 1 - doubleLineCnt;
                 let tpLineText = tpLineNum.toString().padStart(4, ' ');
-                // Check if the line is blank
                 if (contLineRegex.test(lineText)) {
                     doubleLineCnt++;
                     continue;
                 }
                 if (blankLineRegex.test(lineText)) {
                     lineText = tpLineText + ":   ;";
+                }
+                else if (preContLineRegex.test(lineText)) {
+                    lineText = tpLineText + ":" + lineText.slice(5).trimEnd();
                 }
                 else if (betweenSemiRegex.test(lineText)) {
                     const match = lineText.match(betweenSemiRegex);
