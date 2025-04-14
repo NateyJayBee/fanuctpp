@@ -379,9 +379,9 @@ async function updateLineNumbers(document: vscode.TextDocument) {
 
             if (contLineRegex.test(lineText)) {
                 doubleLineCnt++;
-                continue;
+                lineText = "    :" + lineText.slice(5).trimEnd() + '   ;';
             }
-            if (blankLineRegex.test(lineText)) {
+            else if (blankLineRegex.test(lineText)) {
                 lineText = tpLineText + ":   ;";
             }
             else if (preContLineRegex.test(lineText)) {

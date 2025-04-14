@@ -58,21 +58,27 @@ To see current issues and to report issues, please visit our [GitHub Issues Page
 
 ## Release Notes
 
-Fanuctpp release 1.0.0
+CodeFanuc release 1.1.0
+- Added arrow buttons in name webview for navigation
+- Changed cursor movement on line deletion
+- Added more Karel syntax
+- Fixed line-continuations not having semicolon
+
+CodeFanuc release 1.0.0
 - Repurposed existing syntax for (.DT) and (.CF) files
 - Created name webview and command to open it
 - Minor syntax additions to (.LS) files
 - New icon and name
 
-Fanuctpp release 0.0.2
+CodeFanuc release 0.0.2
 - Created themed syntax for (.KL) files
 - Minor bugfixes
 
-Fanuctpp release 0.0.1
+CodeFanuc release 0.0.1
 - Created label webview and command to open it
 - Created ctrl+click definition to open filename if it's in the same directory as current file
 
-Fanuctpp pre-release 0.0.1
+CodeFanuc pre-release 0.0.1
 - Created extension with themed syntax for (.LS) files
 - Created first version of event handling for document changes
 

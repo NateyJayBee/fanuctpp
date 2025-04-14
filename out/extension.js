@@ -344,9 +344,9 @@ function updateLineNumbers(document) {
                 let tpLineText = tpLineNum.toString().padStart(4, ' ');
                 if (contLineRegex.test(lineText)) {
                     doubleLineCnt++;
-                    continue;
+                    lineText = "    :" + lineText.slice(5).trimEnd() + '   ;';
                 }
-                if (blankLineRegex.test(lineText)) {
+                else if (blankLineRegex.test(lineText)) {
                     lineText = tpLineText + ":   ;";
                 }
                 else if (preContLineRegex.test(lineText)) {

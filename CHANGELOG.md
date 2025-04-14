@@ -3,12 +3,15 @@
 ## [1.1.0] - 2025-04-13
 ### Added
 - Up and down arrows to Name Webview
+- More Karel syntax
 
 ### Changed
 - Highlight decorator jumping to lines quickly no longer lags
 - Rename in directory saves and doesn't open files
 - Cursor no longer moves on line deletion
 
+### Fixed
+- Linecontinuations missing end semicolon
 
 ## [1.0.2] - 2025-04-02
 ### Fixed

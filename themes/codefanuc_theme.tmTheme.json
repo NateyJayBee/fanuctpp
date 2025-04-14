@@ -242,7 +242,34 @@
         }
       },
       {
-        "scope": "procedures.fanuctp_kl",
+        "scope": [
+            "builtin.byname.fanuctp_kl",
+            "builtin.data_acquisition.fanuctp_kl",
+            "builtin.robot_data_transfer.fanuctp_kl",
+            "builtin.error_handling.fanuctp_kl",
+            "builtin.file_device_operation.fanuctp_kl",
+            "builtin.iphone_communications.fanuctp_kl",
+            "builtin.kcl_operation.fanuctp_kl",
+            "builtin.memory_operation.fanuctp_kl",
+            "builtin.mirror.fanuctp_kl",
+            "builtin.motion_control.fanuctp_kl",
+            "builtin.multi_programming.fanuctp_kl",
+            "builtin.path_operation.fanuctp_kl",
+            "builtin.pc_comms.fanuctp_kl",
+            "builtin.position.fanuctp_kl",
+            "builtin.process_io_setup.fanuctp_kl",
+            "builtin.queue_manager.fanuctp_kl",
+            "builtin.register_operation.fanuctp_kl",
+            "builtin.serial_io.fanuctp_kl",
+            "builtin.string_operation.fanuctp_kl",
+            "builtin.system.fanuctp_kl",
+            "builtin.time_of_day.fanuctp_kl",
+            "builtin.tpe_program.fanuctp_kl",
+            "builtin.translate.fanuctp_kl",
+            "builtin.user_interface.fanuctp_kl",
+            "builtin.vector.fanuctp_kl",
+            "builtin.vision_operation.fanuctp_kl"
+        ],
         "settings": {
             "foreground": "#8E7CC3"
         }
