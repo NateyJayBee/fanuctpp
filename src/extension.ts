@@ -19,6 +19,12 @@ let previousActiveEditorFilePath: string | undefined;
 let isAutoUpd = false;
 let lineNumber: number = 0;
 
+// Track the current highlight timeout
+let currentHighlightTimeout: NodeJS.Timeout | null = null;
+
+// Track the current highlight timeout for labels
+let currentLabelHighlightTimeout: NodeJS.Timeout | null = null;
+
 // Debounce function to delay execution
 function debounce(func: (...args: any[]) => void, wait: number) {
     let timeout: NodeJS.Timeout;
@@ -160,6 +166,19 @@ export function activate(context: vscode.ExtensionContext) {
                         const names = extractItemNames(refreshEditor.document);
                         if (namePanel) {
                             namePanel.webview.html = getNameWebContent(refreshEditor.document, names, globalGroupState);
+                        }
+                    }
+                    return;
+                case 'gotoLine':
+                    const gotoIndex = parseInt(message.index, 10);
+                    const lineIndex = parseInt(message.lineIndex, 10);
+                    const gotoEditor = lastActiveEditor;
+                    if (gotoEditor) {
+                        const groupedNames = extractItemNames(gotoEditor.document);
+                        const names = Object.values(groupedNames).flat();
+                        if (gotoIndex >= 0 && gotoIndex < names.length) {
+                            const targetLine = names[gotoIndex].lines[lineIndex];
+                            gotoItemLine(gotoEditor.document, targetLine);
                         }
                     }
                     return;
@@ -621,8 +640,7 @@ function gotoLabel(editor: vscode.TextEditor, label: string) {
     let document = editor.document;
     if (!lastActiveEditor) {
         document = editor.document;
-    }
-    else {
+    } else {
         document = lastActiveEditor.document;
     }
 
@@ -635,7 +653,7 @@ function gotoLabel(editor: vscode.TextEditor, label: string) {
     // Destructure with default values
     let [startLine, endLine] = fileDict[fileName] || [0, document.lineCount];
 
-    for (let i = startLine; i < endLine+1; i++) {
+    for (let i = startLine; i < endLine + 1; i++) {
         const line = document.lineAt(i).text;
         if (line.includes(label)) {
             const position = new vscode.Position(i, line.length);
@@ -660,9 +678,15 @@ function gotoLabel(editor: vscode.TextEditor, label: string) {
             const range = new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, line.length));
             editor.setDecorations(highlightDecorationType, [range]);
 
-            // Remove the highlight decoration after a short delay
-            setTimeout(() => {
+            // Clear the previous timeout if it exists
+            if (currentLabelHighlightTimeout) {
+                clearTimeout(currentLabelHighlightTimeout);
+            }
+
+            // Set a new timeout to remove the highlight
+            currentLabelHighlightTimeout = setTimeout(() => {
                 editor.setDecorations(highlightDecorationType, []);
+                currentLabelHighlightTimeout = null; // Reset the timeout tracker
             }, 500);
 
             break;
@@ -727,9 +751,15 @@ function gotoJumpLabel(editor: vscode.TextEditor, jump?: string, skip?: string, 
     const range = new vscode.Range(position, new vscode.Position(targetLine, document.lineAt(targetLine).text.length));
     editor.setDecorations(highlightDecorationType, [range]);
 
-    // Remove the highlight decoration after a short delay
-    setTimeout(() => {
+    // Clear the previous timeout if it exists
+    if (currentLabelHighlightTimeout) {
+        clearTimeout(currentLabelHighlightTimeout);
+    }
+
+    // Set a new timeout to remove the highlight
+    currentLabelHighlightTimeout = setTimeout(() => {
         editor.setDecorations(highlightDecorationType, []);
+        currentLabelHighlightTimeout = null; // Reset the timeout tracker
     }, 500);
 }
 
@@ -882,10 +912,10 @@ function getLabelWebContent(document: vscode.TextDocument, labels: string[],
 }
 
 // Extract Reg and I/O names from the document
-function extractItemNames(document: vscode.TextDocument): { [type: string]: { item: string, name: string }[] } {
+function extractItemNames(document: vscode.TextDocument): { [type: string]: { item: string, name: string, lines: number[] }[] } {
     const combinedRegex = /(DI|DO|GI|GO|RI|RO|UI|UO|SI|SO|SPI|SPO|SSI|SSO|CSI|CSO|SIR|CPC|CSC|JPC|JSC|NSI|AR|SR|GO|F|M|VR|(?<!P)R)\[\d*:.*?(?=\])\]/g;
     const nameRegex = /(?<=:)[^:\]]+(?=\])/;
-    const groupedMatches: { [type: string]: { item: string, name: string }[] } = {};
+    const groupedMatches: { [type: string]: { item: string, name: string, lines: number[] }[] } = {};
     const seenItems = new Set<string>();
 
     for (let i = 0; i < document.lineCount; i++) {
@@ -894,14 +924,19 @@ function extractItemNames(document: vscode.TextDocument): { [type: string]: { it
         if (match) {
             const item = match[0];
             const name = item.match(nameRegex)?.[0]?.trim() || '';
+            const matchItem = item.match(/^[A-Z]+/);
+            const type = matchItem ? matchItem[0] : '';
             if (!seenItems.has(item)) {
-                const match = item.match(/^[A-Z]+/);
-                const type = match ? match[0] : '';
                 if (!groupedMatches[type]) {
                     groupedMatches[type] = [];
                 }
-                groupedMatches[type].push({ item, name });
+                groupedMatches[type].push({ item, name, lines: [i+1]  });
                 seenItems.add(item);
+            } else {
+                const existingItem = groupedMatches[type].find(entry => entry.item === item);
+                if (existingItem) {
+                    existingItem.lines.push(i+1);
+                }
             }
         }
     }
@@ -918,7 +953,7 @@ function extractItemNames(document: vscode.TextDocument): { [type: string]: { it
     }
 
     // Sort the groups by their keys
-    const sortedGroupedMatches: { [type: string]: { item: string, name: string }[] } = {};
+    const sortedGroupedMatches: { [type: string]: { item: string, name: string, lines: number[] }[] } = {};
     Object.keys(groupedMatches).sort().forEach(key => {
         sortedGroupedMatches[key] = groupedMatches[key];
     });
@@ -927,7 +962,7 @@ function extractItemNames(document: vscode.TextDocument): { [type: string]: { it
 }
 
 // Function to handle name updates in a single document
-function updateName(document: vscode.TextDocument, oldItem: string, oldName: string, newName: string) {
+function updateName(document: vscode.TextDocument, oldItem: string, oldName: string, newName: string, hidden: boolean = false) {
     const text = document.getText();
     const oldItemRegex = new RegExp(`${oldItem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
     const newItemText = oldItem.replace(oldName, newName);
@@ -940,17 +975,53 @@ function updateName(document: vscode.TextDocument, oldItem: string, oldName: str
     );
     edit.replace(document.uri, fullRange, newText);
     vscode.workspace.applyEdit(edit);
+
+    if (hidden) {
+        // save and don't show the document
+        document.save()
+    }
+
+}
+
+// Function to handle item line navigation
+function gotoItemLine(document: vscode.TextDocument, lineNum: number) {
+    const position = new vscode.Position(lineNum - 1, 0);
+    const editor = lastActiveEditor;
+    if (editor) {
+        editor.selection = new vscode.Selection(position, position);
+        editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.AtTop);
+    
+        // Apply the highlight decoration
+        const range = new vscode.Range(position, new vscode.Position(lineNum - 1, document.lineAt(lineNum - 1).text.length));
+        editor.setDecorations(highlightDecorationType, [range]);
+    
+        // Clear the previous timeout if it exists
+        if (currentHighlightTimeout) {
+            clearTimeout(currentHighlightTimeout);
+        }
+
+        // Set a new timeout to remove the highlight
+        currentHighlightTimeout = setTimeout(() => {
+            editor.setDecorations(highlightDecorationType, []);
+            currentHighlightTimeout = null; // Reset the timeout tracker
+        }, 500);
+    }
 }
 
 // Function to handle name updates in multiple documents in a directory
 async function updateNameInDirectory(directory: vscode.Uri, oldItem: string, oldName: string, newName: string) {
     const files = await vscode.workspace.findFiles(new vscode.RelativePattern(directory, '*'));
     for (const file of files) {
+        // Ensure the file has a .ls or .LS extension
+        if (!file.fsPath.endsWith('.ls') && !file.fsPath.endsWith('.LS')) {
+            continue;
+        }
+
         const document = await vscode.workspace.openTextDocument(file);
         const text = document.getText();
         const oldItemRegex = new RegExp(`${oldItem.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
         if (oldItemRegex.test(text)) {
-            updateName(document, oldItem, oldName, newName);
+            updateName(document, oldItem, oldName, newName, true);
         }
     }
 }
@@ -988,7 +1059,7 @@ const keyToString: { [key: string]: string } = {
 }
 
 // Function to generate the HTML content for the Name Webview
-function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type: string]: { item: string, name: string }[] }, groupState: { [key: string]: boolean }): string {
+function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type: string]: { item: string, name: string, lines: number[] }[] }, groupState: { [key: string]: boolean }): string {
 
     // Get the file name of the document
     const fileName = path.basename(document.fileName);
@@ -1006,13 +1077,13 @@ function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type:
             <details ${groupState[group] ? 'open' : ''} data-group="${group}">
                 <summary>${groupDescription}</summary>
                 <ul>
-                    ${groupedNames[group].map(({ item, name }) => {
+                    ${groupedNames[group].map(({ item, name, lines }) => {
                         const itemDetails = item.split(':')[0];
                         const itemType = itemDetails.split('[')[0];
                         const itemNumber = itemDetails.split('[')[1];
                         const index = globalIndex++;
                         return `
-                            <li data-index="${index}">
+                            <li data-index="${index}" data-line-index="0" data-lines="${lines.join(',')}">
                                 <div class="name-container">
                                     <span class="item-type">${itemType}</span>
                                     <span class="name-text">[</span>
@@ -1021,6 +1092,8 @@ function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type:
                                     <input class="name-input" type="text" value="${name}" data-index="${index}">
                                 </div>
                                 <div class="fields-container">
+                                    <button class="button up-button" data-index="${index}">↑</button>
+                                    <button class="button down-button" data-index="${index}">↓</button>
                                     <button class="button replace-button" data-index="${index}">Replace</button>
                                 </div>
                             </li>
@@ -1138,6 +1211,9 @@ function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type:
                     transform: scale(1.5);
                     margin-right: 10px;
                 }
+                .line-number {
+                    background-color: rgb(36, 36, 36);
+                }
             </style>
     </head>
     <body>
@@ -1185,6 +1261,44 @@ function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type:
                     vscode.postMessage({ command: 'refresh', applyToDirectory });
                 });
             });
+
+            document.querySelectorAll('.up-button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = event.target.getAttribute('data-index');
+                    const listItem = document.querySelector(\`li[data-index="\${index}"]\`);
+                    let lineIndex = parseInt(listItem.getAttribute('data-line-index'), 10);
+                    const lines = listItem.getAttribute('data-lines').split(',').map(Number);
+
+                    // Wrap around to the last index if at the first index
+                    if (lineIndex === 0) {
+                        lineIndex = lines.length - 1;
+                    } else {
+                        lineIndex--;
+                    }
+
+                    listItem.setAttribute('data-line-index', lineIndex);
+                    vscode.postMessage({ command: 'gotoLine', index, lineIndex });
+                });
+            });
+
+            document.querySelectorAll('.down-button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = event.target.getAttribute('data-index');
+                    const listItem = document.querySelector(\`li[data-index="\${index}"]\`);
+                    let lineIndex = parseInt(listItem.getAttribute('data-line-index'), 10);
+                    const lines = listItem.getAttribute('data-lines').split(',').map(Number);
+
+                    // Wrap around to the first index if at the last index
+                    if (lineIndex === lines.length - 1) {
+                        lineIndex = 0;
+                    } else {
+                        lineIndex++;
+                    }
+
+                    listItem.setAttribute('data-line-index', lineIndex);
+                    vscode.postMessage({ command: 'gotoLine', index, lineIndex });
+                });
+            }); 
 
             if (state && state.groupState) {
                 Object.keys(state.groupState).forEach(group => {
