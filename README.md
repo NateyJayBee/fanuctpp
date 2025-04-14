@@ -7,7 +7,7 @@ This extension is to assist in software development that includes Fanuc propriet
 - **Automatic Line Renumbering**: Automatically renumbers in-text lines in .ls files when changes are made.
 - **Automatic Semicolon Placement**: Automatically ends in-text lines in .ls files with a semicolon.
 - **Label Webview Command**: View all the Labels and Jump Labels in your code and move to the line number.
-- **Register & I/O Webview Command**: View all of the LS file data types and I/O in your active file. Adds button to replace name in the active file, or all in directory.  
+- **Register & I/O Webview Command**: View all of the LS file data types and I/O in your active file. Adds button to replace name in the active file, or all in directory. Jump to line in code of each item with arrow buttons.   
 - **CodeFanuc Theme**: Custom theme for LS, KL, DT, and CF filetypes.
 
 <div align="center">

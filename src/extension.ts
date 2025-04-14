@@ -5,7 +5,7 @@ import * as path from 'path';
 // GLOBAL VARIABLES
 let globalGroupState: { [key: string]: boolean } = {};
 // fileDict 1 entry per document
-// start line,  end line,  line edits enabled,  total lines,  edit lines, labels, jumps
+// start line,  end line,  line edits enabled,  total lines,  edit lines
 let fileDict: { [fileName: string]: [number, number, boolean, number, number] } = {};
 
 // Panels for webviews
@@ -436,12 +436,14 @@ async function updateLineNumbers(document: vscode.TextDocument) {
         //console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
 
         // move the cursor to the normal TP start column
-        let column = 7; 
-        if (movedPosition) {
-            column = 5;
+        if (totalLines > processedLines) {
+            let column = 7; 
+            if (movedPosition) {
+                column = 5;
+            }
+            const position = new vscode.Position(lineNumber-1, column);
+            editor.selection = new vscode.Selection(position, position);
         }
-        const position = new vscode.Position(lineNumber-1, column);
-        editor.selection = new vscode.Selection(position, position);
 
     }
     // If no line diff return
@@ -1060,8 +1062,6 @@ const keyToString: { [key: string]: string } = {
 
 // Function to generate the HTML content for the Name Webview
 function getNameWebContent(document: vscode.TextDocument, groupedNames: { [type: string]: { item: string, name: string, lines: number[] }[] }, groupState: { [key: string]: boolean }): string {
-
-    // Get the file name of the document
     const fileName = path.basename(document.fileName);
     if (!(fileName in fileDict)) {
          return `<!DOCTYPE html>
