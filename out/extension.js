@@ -301,34 +301,36 @@ function updateLineNumbers(document) {
         // Get the current position of the cursor
         const position = editor.selection.active;
         lineNumber = position.line + 1;
-        const inRange = startLine < lineNumber && lineNumber < endLine;
+        const inRange = startLine - 1 < lineNumber && lineNumber < endLine;
         if (!inRange) {
             return;
         }
-        const text = document.getText();
-        const lines = text.split(/\r?\n/);
-        let tpLines = lines.slice(startLine, endLine - 1);
-        // Line with only whitespace
-        const blankLineRegex = /^\s*[\r\n]?$/;
-        // Line with a line number
-        const lineNumRegex = /^\s*(\d{1,4}):/;
-        // Line that doesn't have a semicolon at the end
-        const noSemiNumRegex = /^\s*(\d{1,4}):\s*[^;]*$/;
-        // Line with 2 semicolons at the end
-        const twoSemiEndRegex = /\s*;\s*;\s*$/;
-        // Line that only has a semicolon
-        const onlySemiRegex = /^\s*(\d{1,4}:)?\s*;$/;
-        // Line with semicolon at start and end
-        const betweenSemiRegex = /^\s*(\d{1,4}):\s*;([^;]*);$/;
-        // Lines with movements
-        const moveRegex = /(^\s*(\d{1,4}):|\s+)\s*[JL]\s/;
-        // Line with comma at end, code taking up 2 lines
-        const contLineRegex = /^\s\s\s\s:/;
-        // Line before continue line
-        const preContLineRegex = /^\s*(\d{1,4}):.*,$/;
         // SKIPPED LINES
         let diff = Math.abs(totalLines - processedLines);
         if (diff >= 1) {
+            const text = document.getText();
+            const lines = text.split(/\r?\n/);
+            let tpLines = lines.slice(startLine, endLine - 1);
+            // Line with only whitespace
+            const blankLineRegex = /^\s*[\r\n]?$/;
+            // Line with a line number
+            const lineNumRegex = /^\s*(\d{1,4}):/;
+            // Line that has only a number and a semicolon at the end
+            const noSemiNumRegex = /^\s*(\d{1,4}):\s*$/;
+            // Line that doesn't have a semicolon at the end
+            const noSemiWordRegex = /^\s*(\d{1,4}):\s*[^;]*$/;
+            // Line with 2 semicolons at the end
+            const twoSemiEndRegex = /\s*;\s*;\s*$/;
+            // Line that only has a semicolon
+            const onlySemiRegex = /^\s*(\d{1,4}:)?\s*;$/;
+            // Line with semicolon at start and end
+            const betweenSemiRegex = /^\s*(\d{1,4}:|\s*)\s*;([^;]*);$/;
+            // Lines with movements
+            const moveRegex = /(^\s*(\d{1,4}):|\s+)\s*[JL]\s/;
+            // Line without number, usually after continuation line
+            const contLineRegex = /^\s\s\s\s:/;
+            // Line before continued line
+            const preContLineRegex = /^\s*(\d{1,4}):.*,$/;
             isAutoUpd = true;
             //console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
             // Boolean to check if current line is a continuation of previous
@@ -342,15 +344,17 @@ function updateLineNumbers(document) {
                 let lineText = tpLines[i];
                 let tpLineNum = i + 1 - doubleLineCnt;
                 let tpLineText = tpLineNum.toString().padStart(4, ' ');
-                if (contLineRegex.test(lineText)) {
-                    doubleLineCnt++;
-                    lineText = "    :" + lineText.slice(5).trimEnd() + '   ;';
-                }
-                else if (blankLineRegex.test(lineText)) {
+                if (blankLineRegex.test(lineText)) {
                     lineText = tpLineText + ":   ;";
                 }
                 else if (preContLineRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.slice(5).trimEnd();
+                }
+                else if (twoSemiEndRegex.test(lineText)) {
+                    lineText = tpLineText + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');
+                    if (onlySemiRegex.test(lineText)) {
+                        lineText = tpLineText + ":   ;";
+                    }
                 }
                 else if (betweenSemiRegex.test(lineText)) {
                     const match = lineText.match(betweenSemiRegex);
@@ -358,21 +362,21 @@ function updateLineNumbers(document) {
                         let content = match[2].trim();
                         // Handle lines starting with "J " or "L "
                         if (content.startsWith("J ") || content.startsWith("L ")) {
-                            lineText = tpLineText + ":" + content + '   ;';
+                            lineText = tpLineText + ":" + content + ' ;';
                         }
                         else {
-                            lineText = tpLineText + ":  " + content + '   ;';
+                            lineText = tpLineText + ":  " + content + ' ;';
                         }
                     }
                 }
                 else if (noSemiNumRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.slice(5).trimEnd() + '   ;';
                 }
+                else if (noSemiWordRegex.test(lineText)) {
+                    lineText = tpLineText + ":" + lineText.slice(5).trimEnd() + ' ;';
+                }
                 else if (onlySemiRegex.test(lineText)) {
                     lineText = tpLineText + ":   ;";
-                }
-                else if (twoSemiEndRegex.test(lineText)) {
-                    lineText = tpLineText + ":" + lineText.slice(5).replace(twoSemiEndRegex, '   ;');
                 }
                 else if (lineNumRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.slice(5);
@@ -380,6 +384,13 @@ function updateLineNumbers(document) {
                 else if (moveRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.trimStart();
                     movedPosition = true;
+                }
+                else if (contLineRegex.test(lineText)) {
+                    doubleLineCnt++;
+                    lineText = "    :" + lineText.slice(5).trimEnd() + ' ;';
+                    if (twoSemiEndRegex.test(lineText)) {
+                        lineText = lineText.replace(twoSemiEndRegex, ' ;');
+                    }
                 }
                 else {
                     lineText = tpLineText + ":  " + lineText.trimStart();
@@ -404,13 +415,13 @@ function updateLineNumbers(document) {
                 const position = new vscode.Position(lineNumber - 1, column);
                 editor.selection = new vscode.Selection(position, position);
             }
+            // Update the processed lines count
+            fileDict[fileName][4] = lines.length;
         }
         // If no line diff return
         else {
             return;
         }
-        // Update the processed lines count
-        fileDict[fileName][4] = lines.length;
     });
 }
 // Constructs the fileDict entry for the document

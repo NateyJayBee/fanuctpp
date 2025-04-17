@@ -2,7 +2,7 @@
   "name": "fanuctpp",
   "displayName": "CodeFanuc TP Assist",
   "description": "Advanced Language extension for Fanuc Teach Pendant Programming",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "NathanBadanjek",
   "main": "./out/extension.js",
   "scripts": {

@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.1.1] - 2025-04-17
+### Changed
+- Semicolon spacing at end of line now one space
+
 ## [1.1.0] - 2025-04-13
 ### Added
 - Up and down arrows to Name Webview

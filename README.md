@@ -58,6 +58,9 @@ To see current issues and to report issues, please visit our [GitHub Issues Page
 
 ## Release Notes
 
+CodeFanuc release 1.1.1
+- Changed end of line semicolon spacing to one
+
 CodeFanuc release 1.1.0
 - Added arrow buttons in name webview for navigation
 - Changed cursor movement on line deletion
