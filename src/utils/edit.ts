@@ -12,7 +12,7 @@ import {
 // Updates the line numbers in the document
 // Called on document change in total line numbers
 // Called on command execution
-export async function updateLineNumbers(document: vscode.TextDocument) {
+export async function editLineNumbers(document: vscode.TextDocument, asCommand: boolean = false) {
 
     // Get the file name of the document
     const fileName = path.basename(document.fileName);
@@ -32,7 +32,6 @@ export async function updateLineNumbers(document: vscode.TextDocument) {
     const editor = vscode.window.activeTextEditor;
 
     if (!editor) {
-        console.log('updt: No active editor');
         return;
     }
 
@@ -47,7 +46,7 @@ export async function updateLineNumbers(document: vscode.TextDocument) {
 
     // SKIPPED LINES
     let diff = Math.abs(totalLines - processedLines);
-    if (diff >= 1) {
+    if ((diff >= 1) || asCommand === true) {
 
         const text = document.getText();
         const lines = text.split(/\r?\n/);
@@ -76,7 +75,6 @@ export async function updateLineNumbers(document: vscode.TextDocument) {
         const preContLineRegex = /^\s*(\d{1,4}):.*,$/;
 
         setIsAutoUpd(true);
-        //console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
 
         // Boolean to check if current line is a continuation of previous
         let doubleLineCnt = 0;
@@ -144,13 +142,10 @@ export async function updateLineNumbers(document: vscode.TextDocument) {
                 lineText = tpLineText + ":  " + lineText.trimStart();
             }
 
-
-            
             // Push the edit
             const lineLength = document.lineAt(startLine + i).text.length;
             edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i, 0, startLine + i, lineLength), lineText));
         }
-
 
         // Apply the edits to the document
         const edit = new vscode.WorkspaceEdit();
@@ -159,7 +154,6 @@ export async function updateLineNumbers(document: vscode.TextDocument) {
         
         await vscode.workspace.applyEdit(edit);
         setIsAutoUpd(false);
-        //console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
 
         // move the cursor to the normal TP start column
         if (totalLines > processedLines) {
@@ -231,9 +225,6 @@ export async function setLineNumbers(document: vscode.TextDocument) {
         fileDict[fileName][3] = document.lineCount;
     }
     setFileDict(fileDict);
-    
-    //console.log(`set: Setting line numbers for ${fileName}`);
-    //console.log('set: ' + JSON.stringify(fileDict[fileName]));
 }
 
 // Function to handle name updates in a single document

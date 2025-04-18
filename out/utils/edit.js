@@ -32,7 +32,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateLineNumbers = updateLineNumbers;
+exports.editLineNumbers = editLineNumbers;
 exports.setLineNumbers = setLineNumbers;
 exports.editName = editName;
 exports.editNameInDirectory = editNameInDirectory;
@@ -42,8 +42,8 @@ const state_1 = require("../state");
 // Updates the line numbers in the document
 // Called on document change in total line numbers
 // Called on command execution
-function updateLineNumbers(document) {
-    return __awaiter(this, void 0, void 0, function* () {
+function editLineNumbers(document_1) {
+    return __awaiter(this, arguments, void 0, function* (document, asCommand = false) {
         // Get the file name of the document
         const fileName = path.basename(document.fileName);
         const fileDict = (0, state_1.getFileDict)();
@@ -58,7 +58,6 @@ function updateLineNumbers(document) {
         const edits = [];
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            console.log('updt: No active editor');
             return;
         }
         // Get the current position of the cursor
@@ -70,7 +69,7 @@ function updateLineNumbers(document) {
         }
         // SKIPPED LINES
         let diff = Math.abs(totalLines - processedLines);
-        if (diff >= 1) {
+        if ((diff >= 1) || asCommand === true) {
             const text = document.getText();
             const lines = text.split(/\r?\n/);
             let tpLines = lines.slice(startLine, endLine - 1);
@@ -95,7 +94,6 @@ function updateLineNumbers(document) {
             // Line before continued line
             const preContLineRegex = /^\s*(\d{1,4}):.*,$/;
             (0, state_1.setIsAutoUpd)(true);
-            //console.log('updt: START Applying edits: isAutoUpd = ' + isAutoUpd);
             // Boolean to check if current line is a continuation of previous
             let doubleLineCnt = 0;
             // new line made on position
@@ -168,7 +166,6 @@ function updateLineNumbers(document) {
             edit.set(uri, edits);
             yield vscode.workspace.applyEdit(edit);
             (0, state_1.setIsAutoUpd)(false);
-            //console.log('updt: DONE Applying edits: isAutoUpd = ' + isAutoUpd);
             // move the cursor to the normal TP start column
             if (totalLines > processedLines) {
                 let column = 7;
@@ -233,8 +230,6 @@ function setLineNumbers(document) {
             fileDict[fileName][3] = document.lineCount;
         }
         (0, state_1.setFileDict)(fileDict);
-        //console.log(`set: Setting line numbers for ${fileName}`);
-        //console.log('set: ' + JSON.stringify(fileDict[fileName]));
     });
 }
 // Function to handle name updates in a single document

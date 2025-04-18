@@ -71,7 +71,7 @@ function activate(context) {
         }
         (0, edit_1.setLineNumbers)(event.document);
         if (event.document.languageId === 'fanuctp_ls' && autoLineRenum) {
-            yield (0, edit_1.updateLineNumbers)(event.document);
+            yield (0, edit_1.editLineNumbers)(event.document);
         }
     }), 50);
     const disposeDebounceChange = vscode.workspace.onDidChangeTextDocument(debouncedOnDidChangeTextDocument);
@@ -80,7 +80,7 @@ function activate(context) {
     const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', (event) => __awaiter(this, void 0, void 0, function* () {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'fanuctp_ls') {
-            yield (0, edit_1.updateLineNumbers)(event.document);
+            yield (0, edit_1.editLineNumbers)(editor.document, true);
         }
     }));
     // Listen for changes in the active editor
@@ -100,8 +100,6 @@ function activate(context) {
         const labelPanel = (0, state_1.getLabelPanel)();
         if (namePanel) {
             const groupedNames = (0, extractors_1.extractItemNames)(editor.document);
-            //const state = namePanel.webview.getState();
-            //const groupState = state ? state.groupState : globalGroupState;
             namePanel.webview.postMessage({ command: 'updateGroupState', groupState: (0, state_1.getGlobalGroupState)() });
             namePanel.webview.html = (0, nameWebview_1.getNameWebContent)(editor.document, groupedNames, (0, state_1.getGlobalGroupState)());
         }
@@ -120,7 +118,7 @@ function activate(context) {
     // Register the definition provider to open files
     context.subscriptions.push(vscode.languages.registerDefinitionProvider('fanuctp_ls', new openProgramCommands_1.CallDefinitionProvider()));
     // Pushing all event listeners and commands to the context
-    context.subscriptions.push(disposeOpen, disposeDebounceChange, disposeLabelView, disposeNameView, disposeActiveEditorChange);
+    context.subscriptions.push(disposeOpen, disposeDebounceChange, disposeLabelView, disposeNameView, disposeActiveEditorChange, disposableCommand);
 }
 function deactivate() { }
 function length(arg0) {

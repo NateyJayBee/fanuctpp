@@ -94,11 +94,15 @@
     "commands": [
       {
         "command": "extension.openLabelView",
-        "title": "Open Label View"
+        "title": "CodeFanuc: Open Label View"
       },
       {
         "command": "extension.openNameView",
-        "title": "Open Name View"
+        "title": "CodeFanuc: Open Name View"
+      },
+      {
+        "command": "extension.updateLineNumbers",
+        "title": "CodeFanuc: Update Line Numbers"
       }
     ],
     "grammars": [

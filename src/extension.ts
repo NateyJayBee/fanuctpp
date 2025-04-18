@@ -1,5 +1,4 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 
 import { 
     setLastActiveEditor,
@@ -13,7 +12,7 @@ import {
 
 import { CallDefinitionProvider } from './commands/openProgramCommands';
 import { debounce } from './utils/debounce';
-import { setLineNumbers, updateLineNumbers } from './utils/edit';
+import { setLineNumbers, editLineNumbers } from './utils/edit';
 import { extractItemNames, extractLabels, extractJumps, extractSkips, extractSkipJumps } from './utils/extractors';
 
 import { getLabelWebContent } from './webviews/labelWebview';
@@ -56,7 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
         setLineNumbers(event.document);
 
         if (event.document.languageId === 'fanuctp_ls' && autoLineRenum) {
-            await updateLineNumbers(event.document);
+            await editLineNumbers(event.document);
         }
     }, 50); 
 
@@ -67,7 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
     const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', async (event: vscode.TextDocumentChangeEvent) => {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'fanuctp_ls') {
-            await updateLineNumbers(event.document);
+            await editLineNumbers(editor.document, true);
         }
     });
 
@@ -89,8 +88,6 @@ export function activate(context: vscode.ExtensionContext) {
         const labelPanel = getLabelPanel();
         if (namePanel) {
             const groupedNames = extractItemNames(editor.document);
-            //const state = namePanel.webview.getState();
-            //const groupState = state ? state.groupState : globalGroupState;
             namePanel.webview.postMessage({ command: 'updateGroupState', groupState: getGlobalGroupState() });
             namePanel.webview.html = getNameWebContent(editor.document, groupedNames, getGlobalGroupState());
         }
@@ -113,7 +110,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Pushing all event listeners and commands to the context
     context.subscriptions.push(disposeOpen, disposeDebounceChange, 
-        disposeLabelView, disposeNameView, disposeActiveEditorChange);
+        disposeLabelView, disposeNameView, disposeActiveEditorChange,
+        disposableCommand);
 }
 
 export function deactivate() {}
