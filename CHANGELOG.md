@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.1.2] - 2025-04-18
+### Added
+- Update Line Numbers Command
+
+### Changed
+- Repository structure now modular
+
 ## [1.1.1] - 2025-04-17
 ### Changed
 - Semicolon spacing at end of line now one space

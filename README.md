@@ -7,7 +7,8 @@ This extension is to assist in software development that includes Fanuc propriet
 - **Automatic Line Renumbering**: Automatically renumbers in-text lines in .ls files when changes are made.
 - **Automatic Semicolon Placement**: Automatically ends in-text lines in .ls files with a semicolon.
 - **Label Webview Command**: View all the Labels and Jump Labels in your code and move to the line number.
-- **Register & I/O Webview Command**: View all of the LS file data types and I/O in your active file. Adds button to replace name in the active file, or all in directory. Jump to line in code of each item with arrow buttons.   
+- **Register & I/O Webview Command**: View all of the LS file data types and I/O in your active file. Adds button to replace name in the active file, or all in directory. Jump to line in code of each item with arrow buttons.
+- **Update Line Numbers Command**: Manually update in-text lines in .ls files on command.    
 - **CodeFanuc Theme**: Custom theme for LS, KL, DT, and CF filetypes.
 
 <div align="center">
@@ -34,10 +35,10 @@ VS Code 1.95.0
 - **CodeFanuc Theme**: Set using the Color Theme option in VS Code.
 - **Automatic Line Renumbering**: This feature is enabled by default.
     CAN BE DISABLED with user setting "autoLineRenumber": false
-- **Ctrl+Click to Open Filename**: Automatically open a file through text by clicking on it while holding ctrl.
+- **Update Line Numbers Command**: Use the command `Update Line Numbers`. Ctrl+Shift+P
 - **Automatic Semicolon Placement**: Attached to Line Renumbering.
-- **Label Webview Command**: Use the command `fanuctpp.openLabelView` to open this webview. Ctrl+Shift+P
-- **Register & I/O Names Webview Command**: Use the command `fanuctpp.openNameView` to open this webview. Ctrl+Shift+P
+- **Label Webview Command**: Use the command `Open Label View` to open this webview. Ctrl+Shift+P
+- **Register & I/O Names Webview Command**: Use the command `Open Name View` to open this webview. Ctrl+Shift+P
 - **Ctrl+Click to Open Filename**: Ctrl+click on a program name in `CALL/RUN 'programName'` to open the corresponding file if it exists in the same directory.
 
 ## Installation
@@ -57,6 +58,10 @@ Contributions are welcome! Please open an issue or submit a pull request on GitH
 To see current issues and to report issues, please visit our [GitHub Issues Page](https://github.com/NateyJayBee/fanuctpp/issues).
 
 ## Release Notes
+
+CodeFanuc release 1.1.2
+- Added Update Line Number command
+- Refactored repository for reasons
 
 CodeFanuc release 1.1.1
 - Changed end of line semicolon spacing to one
