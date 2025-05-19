@@ -1,4 +1,8 @@
-export function getBackupWebContent(profiles: { name: string; directory: string; robots: { name: string; ip: string; isConnected: boolean }[] }[]): string {
+import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
+
+export function getBackupWebContent(profiles: { name: string; directory: string; robots: { name: string; ip: string }[] }[]): string {
     const profileHtml = profiles.map((profile, profileIndex) => {
         const robotsHtml = profile.robots.map((robot, robotIndex) => {
             return `
@@ -7,7 +11,7 @@ export function getBackupWebContent(profiles: { name: string; directory: string;
                         <span class="robot-name">Robot Name: ${robot.name}</span>
                         <span class="robot-ip">IP: ${robot.ip}</span>
                     </div>
-                    <button class="button backup-button ${robot.isConnected ? 'green' : 'red'}" data-profile-index="${profileIndex}" data-robot-index="${robotIndex}">
+                    <button class="button backup-button red" data-profile-index="${profileIndex}" data-robot-index="${robotIndex}">
                         Backup
                     </button>
                 </li>
@@ -132,15 +136,56 @@ export function getBackupWebContent(profiles: { name: string; directory: string;
                         vscode.postMessage({ command: 'backupRobot', profileIndex, robotIndex });
                     });
                 });
+                
+                // Validate IPs every 5 seconds
+                setInterval(() => {
+                    document.querySelectorAll('.robot-item').forEach((robotItem) => {
+                        const profileIndex = robotItem.dataset.profileIndex;
+                        const robotIndex = robotItem.dataset.robotIndex;
+                        const ip = robotItem.querySelector('.robot-ip').textContent.split(': ')[1];
+
+                        vscode.postMessage({ command: 'validateIP', profileIndex, robotIndex, ip });
+                    });
+                }, 5000);
+
+                // Listen for IP validation results
+                window.addEventListener('message', (event) => {
+                    const { command, profileIndex, robotIndex, isValid } = event.data;
+                    if (command === 'updateIPStatus') {
+                        const button = document.querySelector(\`.robot-item[data-profile-index="\${profileIndex}"][data-robot-index="\${robotIndex}"] .backup-button\`);
+                        if (button) {
+                            button.classList.toggle('green', isValid);
+                            button.classList.toggle('red', !isValid);
+                        }
+                    }
+                });
             </script>
         </body>
         </html>
     `;
 }
 
-export function getProfileManagerWebContent(profiles: { name: string; directory: string; robots: { name: string; ip: string }[] }[]): string {
-    const profileHtml = profiles.map((profile, profileIndex) => {
-        const robotsHtml = profile.robots.map((robot, robotIndex) => {
+export function getBackupManagerWebContent(context: vscode.ExtensionContext): string {
+    const profilesPath = path.join(context.globalStorageUri.fsPath, 'codeFanucBackupProfiles.json');
+
+    // Load profiles from JSON
+    let profiles = JSON.parse(fs.readFileSync(profilesPath, 'utf-8'));
+
+    interface Robot {
+        name: string;
+        ip: string;
+        ftpUser: string;
+        ftpPass: string;
+    }
+
+    interface Profile {
+        name: string;
+        directory: string;
+        robots: Robot[];
+    }
+
+    const profileHtml: string = (profiles as Profile[]).map((profile: Profile, profileIndex: number) => {
+        const robotsHtml: string = profile.robots.map((robot: Robot, robotIndex: number) => {
             return `
                 <li class="robot-item" data-profile-index="${profileIndex}" data-robot-index="${robotIndex}">
                     <div class="robot-container">

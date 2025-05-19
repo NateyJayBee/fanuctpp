@@ -21,6 +21,9 @@ import { registerLabelView } from './commands/labelCommands';
 import { getNameWebContent } from './webviews/nameWebview';
 import { registerNameView } from './commands/nameCommands';
 
+import { getBackupWebContent, getBackupManagerWebContent } from './webviews/backupWebview';
+import { registerBackupView, registerBackupManagerView } from './commands/backupCommands';
+
 export function activate(context: vscode.ExtensionContext) {
 
     //console.log('Extension "fanuctpp" is now active!');
@@ -104,6 +107,8 @@ export function activate(context: vscode.ExtensionContext) {
     // Register webview View commands
     const disposeNameView = registerNameView(context);
     const disposeLabelView = registerLabelView(context);
+    const disposeBackupView = registerBackupView(context);
+    const disposeBackupManagerView = registerBackupManagerView(context);
 
     // Register the definition provider to open files
     context.subscriptions.push(vscode.languages.registerDefinitionProvider('fanuctp_ls', new CallDefinitionProvider()));
@@ -111,7 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Pushing all event listeners and commands to the context
     context.subscriptions.push(disposeOpen, disposeDebounceChange, 
         disposeLabelView, disposeNameView, disposeActiveEditorChange,
-        disposableCommand);
+        disposeBackupView, disposeBackupManagerView, disposableCommand);
 }
 
 export function deactivate() {}

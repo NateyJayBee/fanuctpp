@@ -44,6 +44,7 @@ const labelWebview_1 = require("./webviews/labelWebview");
 const labelCommands_1 = require("./commands/labelCommands");
 const nameWebview_1 = require("./webviews/nameWebview");
 const nameCommands_1 = require("./commands/nameCommands");
+const backupCommands_1 = require("./commands/backupCommands");
 function activate(context) {
     //console.log('Extension "fanuctpp" is now active!');
     // ------------------INITIAL SETUP-------------------
@@ -115,10 +116,12 @@ function activate(context) {
     // Register webview View commands
     const disposeNameView = (0, nameCommands_1.registerNameView)(context);
     const disposeLabelView = (0, labelCommands_1.registerLabelView)(context);
+    const disposeBackupView = (0, backupCommands_1.registerBackupView)(context);
+    const disposeBackupManagerView = (0, backupCommands_1.registerBackupManagerView)(context);
     // Register the definition provider to open files
     context.subscriptions.push(vscode.languages.registerDefinitionProvider('fanuctp_ls', new openProgramCommands_1.CallDefinitionProvider()));
     // Pushing all event listeners and commands to the context
-    context.subscriptions.push(disposeOpen, disposeDebounceChange, disposeLabelView, disposeNameView, disposeActiveEditorChange, disposableCommand);
+    context.subscriptions.push(disposeOpen, disposeDebounceChange, disposeLabelView, disposeNameView, disposeActiveEditorChange, disposeBackupView, disposeBackupManagerView, disposableCommand);
 }
 function deactivate() { }
 function length(arg0) {

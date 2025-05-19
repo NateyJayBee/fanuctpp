@@ -26,6 +26,8 @@ let _globalGroupState: { [key: string]: boolean } = {};
 let _fileDict: { [fileName: string]: [number, number, boolean, number, number] } = {};
 let _labelPanel: vscode.WebviewPanel | undefined;
 let _namePanel: vscode.WebviewPanel | undefined;
+let _backupPanel: vscode.WebviewPanel | undefined;
+let _backupManagerPanel: vscode.WebviewPanel | undefined;
 let _lastActiveEditor: vscode.TextEditor | undefined;
 let _previousActiveEditorFilePath: string | undefined;
 let _isAutoUpd: boolean = false;
@@ -45,6 +47,14 @@ export function getLabelPanel() {
 
 export function getNamePanel() {
     return _namePanel;
+}
+
+export function getBackupPanel() {
+    return _backupPanel;
+}
+
+export function getBackupManagerPanel() {
+    return _backupManagerPanel;
 }
 
 export function getLastActiveEditor() {
@@ -74,6 +84,14 @@ export function setLabelPanel(panel: vscode.WebviewPanel | undefined) {
 
 export function setNamePanel(panel: vscode.WebviewPanel | undefined) {
     _namePanel = panel;
+}
+
+export function setBackupPanel(panel: vscode.WebviewPanel | undefined) {
+    _backupPanel = panel;
+}
+
+export function setBackupManagerPanel(panel: vscode.WebviewPanel | undefined) {
+    _backupManagerPanel = panel;
 }
 
 export function setLastActiveEditor(editor: vscode.TextEditor | undefined) {

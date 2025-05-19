@@ -1,8 +1,9 @@
-export async function validateIP(ip: string): Promise<boolean> {
-    const { exec } = require('child_process');
+import { exec } from 'child_process';
+
+export function validateIP(ip: string): Promise<boolean> {
     return new Promise((resolve) => {
-        exec(`ping -n 1 ${ip}`, (error: any) => {
-            resolve(!error);
+        exec(`ping -n 1 ${ip}`, (error) => {
+            resolve(!error); // If no error, the IP is reachable
         });
     });
 }
