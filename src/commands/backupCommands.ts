@@ -9,6 +9,7 @@ import {
     setBackupManagerPanel,
     getBackupManagerPanel
 } from '../state'
+import { isValidProfileName, isSafeDirectory } from '../utils/files'
 import { getBackupWebContent } from '../webviews/backupWebview';
 import { getBackupManagerWebContent } from '../webviews/backupWebview';
 import { validateIP, startBackup } from '../utils/network'
@@ -77,32 +78,19 @@ export const registerBackupManagerView = (context: vscode.ExtensionContext) => {
         let profiles: { name: string; directory: string; robots: { name: string; ip: string, ftpUser: string, ftpPass: string }[] }[] = [];
 
         // Load config from JSON, or create if missing
-        if (fs.existsSync(configPath)) {
-            try {
-                const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-                dfltBackupsDir = config.defaultBackupsDir || dfltBackupsDir;
-            } catch (err) {
-                // If file is corrupted, recreate it
-                fs.writeFileSync(configPath, JSON.stringify({ defaultBackupsDir: dfltBackupsDir }, null, 4));
-            }
-        } else {
+        try {
+            const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+            dfltBackupsDir = config.defaultBackupsDir || dfltBackupsDir;
+        } catch (err) {
+            // If file is corrupted, recreate it
             fs.writeFileSync(configPath, JSON.stringify({ defaultBackupsDir: dfltBackupsDir }, null, 4));
         }
 
         // Load profiles from JSON, or create if missing/corrupted
-        if (fs.existsSync(profilesPath)) {
-            try {
-                profiles = JSON.parse(fs.readFileSync(profilesPath, 'utf-8'));
-            } catch (err) {
-                // If file is corrupted, recreate it with a default profile
-                const dfltProfileName = 'Example';
-                const dfltProfileBackupDir = path.join(dfltBackupsDir, dfltProfileName);
-                profiles = [
-                    { name: dfltProfileName, directory: dfltProfileBackupDir, robots: [{ name: 'R1', ip: '192.168.0.1', ftpUser: '', ftpPass: '' }] }
-                ];
-                fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
-            }
-        } else {
+        try {
+            profiles = JSON.parse(fs.readFileSync(profilesPath, 'utf-8'));
+        } catch (err) {
+            // If file is corrupted, recreate it with a default profile
             const dfltProfileName = 'Example';
             const dfltProfileBackupDir = path.join(dfltBackupsDir, dfltProfileName);
             profiles = [
@@ -130,52 +118,70 @@ export const registerBackupManagerView = (context: vscode.ExtensionContext) => {
         // Helper to update webview after changes
         function updateWebview() {
             if (backupManagerPanel) {
-                let latestProfiles = [];
-                try {
-                    latestProfiles = JSON.parse(fs.readFileSync(profilesPath, 'utf-8'));
-                } catch (err) {
-                    latestProfiles = profiles;
-                }
-                backupManagerPanel.webview.postMessage({
-                    command: 'updateProfiles',
-                    profiles: latestProfiles,
-                    dfltBackupsDir
-                });
+                backupManagerPanel.webview.html = getBackupManagerWebContent(context);
             }
         }
 
         backupManagerPanel.webview.onDidReceiveMessage((message) => {
             switch (message.command) {
+                case 'renameProfile': {
+                    const { profileIndex, newName, newDirectory } = message;
+                    const profile = profiles[profileIndex];
+                    if (
+                        profile &&
+                        isValidProfileName(newName) &&
+                        isSafeDirectory(newDirectory || path.join(dfltBackupsDir, newName))
+                    ) {
+                        profile.name = newName;
+                        profile.directory = newDirectory || path.join(dfltBackupsDir, newName);
+                        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
+                        updateWebview();
+                    } else {
+                        vscode.window.showErrorMessage('Invalid profile name or directory.');
+                    }
+                    break;
+                }
                 case 'addProfile': {
-                    const name = message.name || `Profile ${profiles.length + 1}`;
+                    const name = message.name || `Profile${profiles.length + 1}`;
                     const dir = path.join(dfltBackupsDir, name);
-                    profiles.push({ name, directory: dir, robots: [] });
-                    fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
-                    updateWebview();
+                    if (isValidProfileName(name) && isSafeDirectory(dir)) {
+                        profiles.push({ name, directory: dir, robots: [] });
+                        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
+                        updateWebview();
+                    } else {
+                        vscode.window.showErrorMessage('Invalid profile name or directory.');
+                    }
                     break;
                 }
                 case 'deleteProfile': {
-                    profiles.splice(message.profileIndex, 1);
-                    fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
-                    updateWebview();
-                    break;
-                }
-                case 'renameProfile': {
-                    const { profileIndex, newName } = message;
-                    const profile = profiles[profileIndex];
-                    if (profile) {
-                        profile.name = newName;
-                        profile.directory = path.join(dfltBackupsDir, newName);
+                    const { profileIndex } = message;
+                    if (typeof profileIndex === 'number' && profiles[profileIndex]) {
+                        profiles.splice(profileIndex, 1);
                         fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
                         updateWebview();
+                    } else {
+                        vscode.window.showErrorMessage('Failed to delete profile: invalid index.');
                     }
                     break;
                 }
                 case 'addRobot': {
-                    const { profileIndex, robot } = message;
-                    profiles[profileIndex].robots.push(robot);
-                    fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
-                    updateWebview();
+                    // If you want to update all profiles from the webview (like 'saveAll')
+                    if (Array.isArray(message.profiles)) {
+                        profiles = message.profiles;
+                        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
+                        updateWebview();
+                    } else if (
+                        typeof message.profileIndex === 'number' &&
+                        message.robot &&
+                        typeof message.robot.name === 'string'
+                    ) {
+                        // Fallback: add a single robot to the specified profile
+                        profiles[message.profileIndex].robots.push(message.robot);
+                        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
+                        updateWebview();
+                    } else {
+                        vscode.window.showErrorMessage('Failed to add robot: invalid data.');
+                    }
                     break;
                 }
                 case 'deleteRobot': {
@@ -185,25 +191,20 @@ export const registerBackupManagerView = (context: vscode.ExtensionContext) => {
                     updateWebview();
                     break;
                 }
-                case 'updateRobotName': {
-                    const { profileIndex, robotIndex, field, value } = message;
-                    type RobotField = 'name' | 'ip' | 'ftpUser' | 'ftpPass';
-                    if (['name', 'ip', 'ftpUser', 'ftpPass'].includes(field)) {
-                        profiles[profileIndex].robots[robotIndex][field as RobotField] = value;
-                        fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
-                        updateWebview();
-                    }
-                    break;
-                }
-                case 'updateBackupDirectory': {
-                    const { profileIndex, directory } = message;
-                    profiles[profileIndex].directory = directory;
+                case 'saveAll': {
+                    const { profiles: updatedProfiles, defaultBackupsDir } = message;
+                    profiles = updatedProfiles;
                     fs.writeFileSync(profilesPath, JSON.stringify(profiles, null, 4));
+                    if (defaultBackupsDir) {
+                        dfltBackupsDir = defaultBackupsDir;
+                        fs.writeFileSync(configPath, JSON.stringify({ defaultBackupsDir: dfltBackupsDir }, null, 4));
+                    }
                     updateWebview();
                     break;
                 }
-                case 'updateDefaultBackupDir': {
-                    dfltBackupsDir = message.value;
+                case 'saveDefaultBackupDir': {
+                    const { defaultBackupsDir } = message;
+                    dfltBackupsDir = defaultBackupsDir;
                     fs.writeFileSync(configPath, JSON.stringify({ defaultBackupsDir: dfltBackupsDir }, null, 4));
                     updateWebview();
                     break;

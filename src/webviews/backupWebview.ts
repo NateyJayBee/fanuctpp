@@ -166,7 +166,12 @@ export function getBackupWebContent(profiles: { name: string; directory: string;
 }
 
 export function getBackupManagerWebContent(context: vscode.ExtensionContext): string {
+    // C:\Users\MyUser\AppData\Roaming\Code\User\globalStorage\nathanbadanjek.fanuctpp
     const profilesPath = path.join(context.globalStorageUri.fsPath, 'codeFanucBackupProfiles.json');
+    const dfltBackupDirPath = path.join(context.globalStorageUri.fsPath, 'codeFanucBackupConfig.json');
+
+    // Load default backup directory
+    let dfltBackupsDir = JSON.parse(fs.readFileSync(dfltBackupDirPath, 'utf-8')).defaultBackupsDir || '';
 
     // Load profiles from JSON
     let profiles = JSON.parse(fs.readFileSync(profilesPath, 'utf-8'));
@@ -188,11 +193,19 @@ export function getBackupManagerWebContent(context: vscode.ExtensionContext): st
         const robotsHtml: string = profile.robots.map((robot: Robot, robotIndex: number) => {
             return `
                 <li class="robot-item" data-profile-index="${profileIndex}" data-robot-index="${robotIndex}">
-                    <div class="robot-container">
-                        <label>Robot Name:</label>
-                        <input class="robot-name-input" type="text" value="${robot.name}" />
-                        <label>IP Address:</label>
-                        <input class="robot-ip-input" type="text" value="${robot.ip}" />
+                    <div class="robot-fields-row">
+                        <div class="robot-labels">
+                            <label>Robot Name:</label>
+                            <label>IP Address:</label>
+                            <label>FTP Username:</label>
+                            <label>FTP Password:</label>
+                        </div>
+                        <div class="robot-inputs">
+                            <input class="robot-name-input" type="text" value="${robot.name}" />
+                            <input class="robot-ip-input" type="text" value="${robot.ip}" />
+                            <input class="robot-ftpuser-input" type="text" value="${robot.ftpUser}" />
+                            <input class="robot-ftppass-input" type="text" value="${robot.ftpPass}" />
+                        </div>
                         <button class="button delete-robot-button">Delete Robot</button>
                     </div>
                 </li>
@@ -201,14 +214,18 @@ export function getBackupManagerWebContent(context: vscode.ExtensionContext): st
 
         return `
             <div class="profile" data-profile-index="${profileIndex}">
-                <h2>Profile: ${profile.name}</h2>
+                <div class="profile-header">
+                    <input class="profile-name-input" type="text" value="${profile.name}" readonly />
+                    <button class="button rename-profile-button">Rename</button>
+                    <div class="spacer"></div>
+                    <button class="button delete-profile-button">Delete Profile</button>
+                </div>
                 <label>Backup Directory:</label>
-                <input class="directory-input" type="text" value="${profile.directory}" />
+                <input class="directory-input" type="text" value="${profile.directory}"/>
                 <ul class="robot-list">
                     ${robotsHtml}
                 </ul>
                 <button class="button add-robot-button">Add Robot</button>
-                <button class="button delete-profile-button">Delete Profile</button>
             </div>
         `;
     }).join('');
@@ -219,7 +236,7 @@ export function getBackupManagerWebContent(context: vscode.ExtensionContext): st
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Profile Manager</title>
+            <title>Backup Profile Manager</title>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -231,6 +248,24 @@ export function getBackupManagerWebContent(context: vscode.ExtensionContext): st
                     font-size: 2em;
                     margin-bottom: 20px;
                 }
+                .top-bar {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 15px;
+                }
+                .default-dir-row {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 25px;
+                }
+                .default-backup-dir-input {
+                    width: 350px;
+                    margin-right: 10px;
+                    padding: 5px;
+                    border-radius: 3px;
+                    border: 1px solid #888;
+                }
                 .button {
                     padding: 5px 10px;
                     cursor: pointer;
@@ -239,10 +274,18 @@ export function getBackupManagerWebContent(context: vscode.ExtensionContext): st
                     background-color: #007acc;
                     color: white;
                     transition: background-color 0.3s;
+                    margin-bottom: 10px;
                 }
                 .button:hover {
                     background-color: rgb(1, 77, 124);
                 }
+                .button.delete-profile-button {
+                    align-self: right;
+                    background-color: red;
+                }   
+                .button.save-default-dir-button {
+                    margin-top: 10px
+                }   
                 .robot-container, .profile {
                     margin-bottom: 20px;
                     border: 1px solid #ddd;
@@ -250,57 +293,237 @@ export function getBackupManagerWebContent(context: vscode.ExtensionContext): st
                     border-radius: 5px;
                     background-color: rgb(36, 36, 36);
                 }
+                .profile-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .spacer {
+                    flex: 1;
+                }
+                .profile-name-input {
+                    font-size: 1.5em;
+                    margin-bottom: 8px;
+                }
+                .directory-input {
+                    width: 450px;
+                    margin-bottom: 8px;
+                    padding: 3px 6px;
+                    border-radius: 3px;
+                    border: 1px solid #888;
+                }
+                .robot-fields-row {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 16px;
+                    margin-bottom: 8px;
+                    padding: 3px 6px;
+                    border-radius: 3px;
+                    border: 1px solid #888;
+                }
+                .robot-labels {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 14px;
+                }
+                .robot-inputs {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+                .robot-labels {
+                    min-width: 100px;
+                }
+                .robot-inputs input {
+                    width: 150px;
+                }
             </style>
         </head>
         <body>
-            <h1>Profile Manager</h1>
-            <button class="button add-profile-button">Add Profile</button>
+            <h1>Backup Profile Manager</h1>
+            <div class="top-bar">
+                <button class="button add-profile-button">Add Profile</button>
+                <button class="button save-changes-button">Save Changes</button>
+            </div>
+            <div class="default-dir-row">
+                <label for="default-backup-dir-input" style="margin-right:8px;">Default Backup Directory:</label>
+                <input id="default-backup-dir-input" class="default-backup-dir-input" type="text" value="${dfltBackupsDir}" />
+                <button class="button save-default-dir-button">Save</button>
+            </div>
             <div id="profiles">
                 ${profileHtml}
             </div>
             <script>
                 const vscode = acquireVsCodeApi();
 
+                // Add Profile
                 document.querySelector('.add-profile-button').addEventListener('click', () => {
-                    vscode.postMessage({ command: 'addProfile' });
-                });
+                    // Gather all current data from the DOM
+                    const profiles = [];
+                    document.querySelectorAll('.profile').forEach((profileElem) => {
+                        const name = profileElem.querySelector('.profile-name-input').value;
+                        const directory = profileElem.querySelector('.directory-input').value;
+                        const robots = [];
+                        profileElem.querySelectorAll('.robot-item').forEach((robotElem) => {
+                            robots.push({
+                                name: robotElem.querySelector('.robot-name-input').value,
+                                ip: robotElem.querySelector('.robot-ip-input').value,
+                                ftpUser: robotElem.querySelector('.robot-ftpuser-input').value,
+                                ftpPass: robotElem.querySelector('.robot-ftppass-input').value
+                            });
+                        });
+                        profiles.push({ name, directory, robots });
+                    });
 
-                document.querySelectorAll('.add-robot-button').forEach((button) => {
-                    const profileIndex = button.closest('.profile').dataset.profileIndex;
-                    button.addEventListener('click', () => {
-                        vscode.postMessage({ command: 'addRobot', profileIndex });
+                    vscode.postMessage({
+                        command: 'saveAll',
+                        profiles
+                    });
+
+                    // Add a new empty profile
+                    vscode.postMessage({
+                        command: 'addProfile',
+                        profiles
                     });
                 });
 
-                document.querySelectorAll('.delete-profile-button').forEach((button) => {
-                    const profileIndex = button.closest('.profile').dataset.profileIndex;
-                    button.addEventListener('click', () => {
+                // Add Robot
+                document.getElementById('profiles').addEventListener('click', (event) => {
+                    const button = event.target.closest('.add-robot-button');
+                    if (button) {
+                        // Gather all current data from the DOM
+                        const profiles = [];
+                        document.querySelectorAll('.profile').forEach((profileElem) => {
+                            const name = profileElem.querySelector('.profile-name-input').value;
+                            const directory = profileElem.querySelector('.directory-input').value;
+                            const robots = [];
+                            profileElem.querySelectorAll('.robot-item').forEach((robotElem) => {
+                                robots.push({
+                                    name: robotElem.querySelector('.robot-name-input').value,
+                                    ip: robotElem.querySelector('.robot-ip-input').value,
+                                    ftpUser: robotElem.querySelector('.robot-ftpuser-input').value,
+                                    ftpPass: robotElem.querySelector('.robot-ftppass-input').value
+                                });
+                            });
+                            profiles.push({ name, directory, robots });
+                        });
+
+                        // Find which profile to add the robot to
+                        const profileIndex = Number(button.closest('.profile').dataset.profileIndex);
+
+                        // Add a new empty robot to the correct profile
+                        profiles[profileIndex].robots.push({
+                            name: '', ip: '', ftpUser: '', ftpPass: ''
+                        });
+
+                        // Send all updated profiles to the extension
+                        vscode.postMessage({
+                            command: 'saveAll',
+                            profiles
+                        });
+                    }
+                });
+
+                // Delete Profile
+                document.getElementById('profiles').addEventListener('click', (event) => {
+                    const button = event.target.closest('.delete-profile-button');
+                    if (button) {
+                        const profileElem = button.closest('.profile');
+                        const profileIndex = Number(profileElem.dataset.profileIndex);
                         vscode.postMessage({ command: 'deleteProfile', profileIndex });
-                    });
+                    }
                 });
 
+                // Delete Robot
                 document.querySelectorAll('.delete-robot-button').forEach((button) => {
                     const profileIndex = button.closest('.profile').dataset.profileIndex;
                     const robotIndex = button.closest('.robot-item').dataset.robotIndex;
                     button.addEventListener('click', () => {
-                        vscode.postMessage({ command: 'deleteRobot', profileIndex, robotIndex });
+                        vscode.postMessage({ command: 'deleteRobot', profileIndex: Number(profileIndex), robotIndex: Number(robotIndex) });
                     });
                 });
 
-                document.querySelectorAll('.robot-name-input, .robot-ip-input, .directory-input').forEach((input) => {
-                    input.addEventListener('input', (event) => {
-                        const profileIndex = input.closest('.profile').dataset.profileIndex;
-                        const robotIndex = input.closest('.robot-item')?.dataset.robotIndex;
-                        const value = input.value;
-                        vscode.postMessage({
-                            command: 'updateField',
-                            profileIndex,
-                            robotIndex,
-                            field: input.classList.contains('directory-input') ? 'directory' : input.classList.contains('robot-name-input') ? 'name' : 'ip',
-                            value
+                // Save Profile Changes
+                document.querySelector('.save-changes-button').addEventListener('click', () => {
+                    // Gather all profile and robot data from the DOM
+                    const profiles = [];
+                    document.querySelectorAll('.profile').forEach((profileElem, profileIndex) => {
+                        const name = profileElem.querySelector('.profile-name-input').value;
+                        const directory = profileElem.querySelector('.directory-input').value;
+                        const robots = [];
+                        profileElem.querySelectorAll('.robot-item').forEach((robotElem, robotIndex) => {
+                            robots.push({
+                                name: robotElem.querySelector('.robot-name-input').value,
+                                ip: robotElem.querySelector('.robot-ip-input').value,
+                                ftpUser: robotElem.querySelector('.robot-ftpuser-input').value,
+                                ftpPass: robotElem.querySelector('.robot-ftppass-input').value
+                            });
                         });
+                        profiles.push({ name, directory, robots });
+                    });
+
+                    // Get default backup directory if you have a global input for it
+                    const defaultBackupDirInput = document.querySelector('.default-backup-dir-input');
+                    const defaultBackupsDir = defaultBackupDirInput ? defaultBackupDirInput.value : undefined;
+
+                    vscode.postMessage({
+                        command: 'saveAll',
+                        profiles,
+                        defaultBackupsDir
                     });
                 });
+
+                // Save Default Backup Directory
+                document.querySelector('.save-default-dir-button').addEventListener('click', () => {
+                    const defaultBackupDirInput = document.querySelector('.default-backup-dir-input');
+                    const defaultBackupsDir = defaultBackupDirInput.value;
+                    vscode.postMessage({ command: 'saveDefaultBackupDir', defaultBackupsDir });
+                });
+
+                // Rename Profile
+                document.getElementById('profiles').addEventListener('click', (event) => {
+                    const button = event.target.closest('.rename-profile-button');
+                    if (button) {
+                        const profileElem = button.closest('.profile');
+                        const profileIndex = Number(profileElem.dataset.profileIndex);
+                        const nameInput = profileElem.querySelector('.profile-name-input');
+                        const oldName = nameInput.value;
+
+                        // Focus the input for editing
+                        nameInput.removeAttribute('readonly');
+                        nameInput.focus();
+
+                        // Save on blur or Enter
+                        function saveName() {
+                            nameInput.setAttribute('readonly', 'readonly');
+                            const newName = nameInput.value.trim();
+                            if (newName && newName !== oldName) {
+                                vscode.postMessage({
+                                    command: 'renameProfile',
+                                    profileIndex,
+                                    newName
+                                });
+                            } else {
+                                nameInput.value = oldName; // revert if unchanged or empty
+                            }
+                            nameInput.removeEventListener('blur', saveName);
+                            nameInput.removeEventListener('keydown', onKeyDown);
+                        }
+
+                        function onKeyDown(e) {
+                            if (e.key === 'Enter') {
+                                nameInput.blur();
+                            } else if (e.key === 'Escape') {
+                                nameInput.value = oldName;
+                                nameInput.blur();
+                            }
+                        }
+
+                        nameInput.addEventListener('blur', saveName);
+                        nameInput.addEventListener('keydown', onKeyDown);
+                    }
+                });
+
             </script>
         </body>
         </html>
