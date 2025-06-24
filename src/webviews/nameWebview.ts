@@ -36,6 +36,7 @@ export function getNameWebContent(document: vscode.TextDocument, groupedNames: {
                                     <span class="item-number">${itemNumber}</span>
                                     <span class="name-text">:</span>
                                     <input class="name-input" type="text" value="${name}" data-index="${index}">
+                                    <span class="name-text">]</span>
                                 </div>
                                 <div class="fields-container">
                                     <button class="button up-button" data-index="${index}">↑</button>
@@ -126,6 +127,7 @@ export function getNameWebContent(document: vscode.TextDocument, groupedNames: {
                 .name-input {
                     border: 1px solid #ddd;
                     border-radius: 3px;
+                    height: 1.1em;
                     width: 150px;
                     background-color: #333;
                     color: #fff;
@@ -171,7 +173,7 @@ export function getNameWebContent(document: vscode.TextDocument, groupedNames: {
         </div>
         <hr>
         <label class="checkbox-container">
-            <input type="checkbox" id="directory-checkbox"> Apply to entire directory
+            <input type="checkbox" id="directory-checkbox"> Apply changes to entire directory
         </label>
         <hr>
         ${groupHtml}
