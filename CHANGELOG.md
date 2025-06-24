@@ -1,11 +1,14 @@
 # Change Log
 
-## [1.1.2] - 2025-04-18
+## [1.1.2] - 2025-06-24
 ### Added
 - Update Line Numbers Command
 
 ### Changed
 - Repository structure now modular
+
+### Fixed
+- Line continuations missing end semicolon
 
 ## [1.1.1] - 2025-04-17
 ### Changed
@@ -22,7 +25,7 @@
 - Cursor no longer moves on line deletion
 
 ### Fixed
-- Linecontinuations missing end semicolon
+- Line continuations missing end semicolon
 
 ## [1.0.2] - 2025-04-02
 ### Fixed

@@ -78,7 +78,7 @@ function activate(context) {
     const disposeDebounceChange = vscode.workspace.onDidChangeTextDocument(debouncedOnDidChangeTextDocument);
     // ------------------COMMANDS-------------------
     // STANDALONE UPDATE LINE NUMBERS
-    const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', (event) => __awaiter(this, void 0, void 0, function* () {
+    const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', () => __awaiter(this, void 0, void 0, function* () {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'fanuctp_ls') {
             yield (0, edit_1.editLineNumbers)(editor.document, true);

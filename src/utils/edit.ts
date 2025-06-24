@@ -15,7 +15,7 @@ import {
 export async function editLineNumbers(document: vscode.TextDocument, asCommand: boolean = false) {
 
     // Get the file name of the document
-    const fileName = path.basename(document.fileName);
+    const fileName =   path.basename(document.fileName);
     const fileDict = getFileDict();
     if (!(fileName in fileDict)) {
         return {};

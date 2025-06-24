@@ -66,7 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // ------------------COMMANDS-------------------
     // STANDALONE UPDATE LINE NUMBERS
-    const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', async (event: vscode.TextDocumentChangeEvent) => {
+    const disposableCommand = vscode.commands.registerCommand('extension.updateLineNumbers', async () => {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === 'fanuctp_ls') {
             await editLineNumbers(editor.document, true);

@@ -61,7 +61,8 @@ To see current issues and to report issues, please visit our [GitHub Issues Page
 
 CodeFanuc release 1.1.2
 - Added Update Line Number command
-- Refactored repository for reasons
+- Refactored repository for maintainability
+- Changed how in-text line continuations are updated
 
 CodeFanuc release 1.1.1
 - Changed end of line semicolon spacing to one
