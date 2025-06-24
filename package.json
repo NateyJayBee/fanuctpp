@@ -103,14 +103,6 @@
       {
         "command": "extension.updateLineNumbers",
         "title": "CodeFanuc: Update Line Numbers"
-      },
-      {
-        "command": "extension.openBackupManagerView",
-        "title": "CodeFanuc: Open Backup Manager View"
-      },
-      {
-        "command": "extension.openBackupView",
-        "title": "CodeFanuc: Open Backup View"
       }
     ],
     "grammars": [

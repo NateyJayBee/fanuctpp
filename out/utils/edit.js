@@ -74,12 +74,14 @@ function editLineNumbers(document_1) {
             const lines = text.split(/\r?\n/);
             let tpLines = lines.slice(startLine, endLine - 1);
             // Line with only whitespace
-            const blankLineRegex = /^\s*[\r\n]?$/;
+            const blankLineRegex = /^\s*$/;
             // Line with a line number
-            const lineNumRegex = /^\s*(\d{1,4}):/;
-            // Line that has only a number and a semicolon at the end
+            const lineNumRegex = /^\s*\d+:/;
+            // Line without number, usually after continuation line
+            const contLineRegex = /^\s*:/;
+            // Line that has only a number and no semicolon at the end
             const noSemiNumRegex = /^\s*(\d{1,4}):\s*$/;
-            // Line that doesn't have a semicolon at the end
+            // Line that has words and no semicolon at the end
             const noSemiWordRegex = /^\s*(\d{1,4}):\s*[^;]*$/;
             // Line with 2 semicolons at the end
             const twoSemiEndRegex = /\s*;\s*;\s*$/;
@@ -89,13 +91,12 @@ function editLineNumbers(document_1) {
             const betweenSemiRegex = /^\s*(\d{1,4}:|\s*)\s*;([^;]*);$/;
             // Lines with movements
             const moveRegex = /(^\s*(\d{1,4}):|\s+)\s*[JL]\s/;
-            // Line without number, usually after continuation line
-            const contLineRegex = /^\s\s\s\s:/;
-            // Line before continued line
-            const preContLineRegex = /^\s*(\d{1,4}):.*,$/;
             (0, state_1.setIsAutoUpd)(true);
             // Boolean to check if current line is a continuation of previous
-            let doubleLineCnt = 0;
+            let lineContCnt = 0;
+            let inCont = false;
+            let startContIdx = -1;
+            let prevLineText = "";
             // new line made on position
             let movedPosition = false;
             // Iterate over each line in the document
@@ -103,18 +104,39 @@ function editLineNumbers(document_1) {
             // Attempted tracking line created or deleted was slower
             for (let i = 0; i < tpLines.length && i <= endLine - 1; i++) {
                 let lineText = tpLines[i];
-                let tpLineNum = i + 1 - doubleLineCnt;
+                let tpLineNum = i + 1 - lineContCnt;
                 let tpLineText = tpLineNum.toString().padStart(4, ' ');
                 if (blankLineRegex.test(lineText)) {
+                    if (inCont) {
+                        edits.pop();
+                        inCont = false;
+                        prevLineText = prevLineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, ' ;');
+                        let prevLineLength = document.lineAt(startLine + i - 1).text.length;
+                        edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
+                    }
                     lineText = tpLineText + ":   ;";
                 }
-                else if (preContLineRegex.test(lineText)) {
-                    lineText = tpLineText + ":" + lineText.slice(5).trimEnd();
+                else if (contLineRegex.test(lineText)) {
+                    if (!inCont) {
+                        edits.pop();
+                        inCont = true;
+                        prevLineText = prevLineText.replace(/\s*;+\s*$/, ' ');
+                        let prevLineLength = document.lineAt(startLine + i - 1).text.length;
+                        edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
+                    }
+                    lineContCnt++;
                 }
                 else if (twoSemiEndRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');
                     if (onlySemiRegex.test(lineText)) {
                         lineText = tpLineText + ":   ;";
+                    }
+                    if (inCont) {
+                        edits.pop();
+                        inCont = false;
+                        prevLineText = prevLineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, ' ;');
+                        let prevLineLength = document.lineAt(startLine + i - 1).text.length;
+                        edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
                     }
                 }
                 else if (betweenSemiRegex.test(lineText)) {
@@ -129,33 +151,69 @@ function editLineNumbers(document_1) {
                             lineText = tpLineText + ":  " + content + ' ;';
                         }
                     }
+                    if (inCont) {
+                        edits.pop();
+                        inCont = false;
+                        prevLineText = prevLineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, ' ;');
+                        let prevLineLength = document.lineAt(startLine + i - 1).text.length;
+                        edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
+                    }
                 }
                 else if (noSemiNumRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.slice(5).trimEnd() + '   ;';
+                    if (inCont) {
+                        edits.pop();
+                        inCont = false;
+                        prevLineText = prevLineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, ' ;');
+                        let prevLineLength = document.lineAt(startLine + i - 1).text.length;
+                        edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
+                    }
                 }
                 else if (noSemiWordRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.slice(5).trimEnd() + ' ;';
+                    if (inCont) {
+                        edits.pop();
+                        inCont = false;
+                        prevLineText = prevLineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, ' ;');
+                        let prevLineLength = document.lineAt(startLine + i - 1).text.length;
+                        edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
+                    }
                 }
                 else if (onlySemiRegex.test(lineText)) {
                     lineText = tpLineText + ":   ;";
+                    if (inCont) {
+                        edits.pop();
+                        inCont = false;
+                        prevLineText = prevLineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, ' ;');
+                        let prevLineLength = document.lineAt(startLine + i - 1).text.length;
+                        edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
+                    }
                 }
                 else if (lineNumRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.slice(5);
+                    if (inCont) {
+                        edits.pop();
+                        inCont = false;
+                        prevLineText = prevLineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, ' ;');
+                        let prevLineLength = document.lineAt(startLine + i - 1).text.length;
+                        edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
+                    }
                 }
                 else if (moveRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.trimStart();
                     movedPosition = true;
-                }
-                else if (contLineRegex.test(lineText)) {
-                    doubleLineCnt++;
-                    lineText = "    :" + lineText.slice(5).trimEnd() + ' ;';
-                    if (twoSemiEndRegex.test(lineText)) {
-                        lineText = lineText.replace(twoSemiEndRegex, ' ;');
+                    if (inCont) {
+                        edits.pop();
+                        inCont = false;
+                        prevLineText = prevLineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, ' ;');
+                        let prevLineLength = document.lineAt(startLine + i - 1).text.length;
+                        edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
                     }
                 }
                 else {
                     lineText = tpLineText + ":  " + lineText.trimStart();
                 }
+                prevLineText = lineText;
                 // Push the edit
                 const lineLength = document.lineAt(startLine + i).text.length;
                 edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i, 0, startLine + i, lineLength), lineText));

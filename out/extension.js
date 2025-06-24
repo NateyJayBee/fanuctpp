@@ -121,7 +121,7 @@ function activate(context) {
     // Register the definition provider to open files
     context.subscriptions.push(vscode.languages.registerDefinitionProvider('fanuctp_ls', new openProgramCommands_1.CallDefinitionProvider()));
     // Pushing all event listeners and commands to the context
-    context.subscriptions.push(disposeOpen, disposeDebounceChange, disposeLabelView, disposeNameView, disposeActiveEditorChange, disposeBackupView, disposeBackupManagerView, disposableCommand);
+    context.subscriptions.push(disposeOpen, disposeDebounceChange, disposeLabelView, disposeNameView, disposeActiveEditorChange, disposableCommand);
 }
 function deactivate() { }
 function length(arg0) {
