@@ -2,9 +2,9 @@
   "name": "fanuctpp",
   "displayName": "CodeFanuc TP Assist",
   "description": "Advanced Language extension for Fanuc Teach Pendant Programming",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "publisher": "NathanBadanjek",
-  "main": "./out/extension.js",
+  "main": "out/extension.js",
   "scripts": {
     "watch": "tsc -watch -p .",
     "compile": "tsc -p ."
@@ -20,7 +20,15 @@
     "eslint": "^8.57.0",
     "typescript": "^5.5.4"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:fanuctp_ls",
+    "onLanguage:fanuctp_kl",
+    "onLanguage:fanuctp_dt",
+    "onLanguage:fanuctp_cf",
+    "onCommand:extension.openLabelView",
+    "onCommand:extension.openNameView",
+    "onCommand:extension.updateLineNumbers"
+  ],
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -52,7 +60,7 @@
           ".ls",
           ".LS"
         ],
-        "configuration": "./langs/fanuc_ls_lang_config.json"
+        "configuration": "langs/fanuc_ls_lang_config.json"
       },
       {
         "id": "fanuctp_kl",
@@ -64,7 +72,7 @@
           ".kl",
           ".KL"
         ],
-        "configuration": "./langs/fanuc_kl_lang_config.json"
+        "configuration": "langs/fanuc_kl_lang_config.json"
       },
       {
         "id": "fanuctp_dt",
@@ -76,7 +84,7 @@
           ".dt",
           ".DT"
         ],
-        "configuration": "./langs/fanuc_dt_lang_config.json"
+        "configuration": "langs/fanuc_dt_lang_config.json"
       },
       {
         "id": "fanuctp_cf",
@@ -88,7 +96,7 @@
           ".cf",
           ".CF"
         ],
-        "configuration": "./langs/fanuc_cf_lang_config.json"
+        "configuration": "langs/fanuc_cf_lang_config.json"
       }
     ],
     "commands": [
@@ -109,36 +117,36 @@
       {
         "language": "fanuctp_ls",
         "scopeName": "source.fanuctp_ls",
-        "path": "./syntaxes/fanuctp_ls.tmLanguage.json"
+        "path": "syntaxes/fanuctp_ls.tmLanguage.json"
       },
       {
         "language": "fanuctp_kl",
         "scopeName": "source.fanuctp_kl",
-        "path": "./syntaxes/fanuctp_kl.tmLanguage.json"
+        "path": "syntaxes/fanuctp_kl.tmLanguage.json"
       },
       {
         "language": "fanuctp_dt",
         "scopeName": "source.fanuctp_dt",
-        "path": "./syntaxes/fanuctp_dt.tmLanguage.json"
+        "path": "syntaxes/fanuctp_dt.tmLanguage.json"
       },
       {
         "language": "fanuctp_cf",
         "scopeName": "source.fanuctp_cf",
-        "path": "./syntaxes/fanuctp_cf.tmLanguage.json"
+        "path": "syntaxes/fanuctp_cf.tmLanguage.json"
       }
     ],
     "themes": [
         {
             "label": "CodeFanuc Theme",
             "uiTheme": "vs-dark",
-            "path": "./themes/codefanuc_theme.tmTheme.json"
+            "path": "themes/codefanuc_theme.tmTheme.json"
         }
     ]
   },
   "snippets": [
       {
           "language": "fanuctp_kl",
-          "path": "./completions/fanuctp_kl_completions.json"
+          "path": "completions/fanuctp_kl_completions.json"
       }
   ],
   "icon": "images/CodeFanucIcon.png"

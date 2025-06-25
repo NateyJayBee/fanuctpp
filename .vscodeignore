@@ -3,10 +3,6 @@ node_modules/**
 !node_modules/@types
 !node_modules/@vscode
 
-# Exclude build directories except for the entry point
-out/**
-!out/extension.js
-
 # Exclude test directories
 test/**
 

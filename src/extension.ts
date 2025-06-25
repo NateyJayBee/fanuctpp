@@ -115,7 +115,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Pushing all event listeners and commands to the context
     context.subscriptions.push(disposeOpen, disposeDebounceChange, 
-        disposeLabelView, disposeNameView, disposeActiveEditorChange, disposableCommand);
+        disposeLabelView, disposeNameView, disposeActiveEditorChange, 
+        disposableCommand);
 }
 
 export function deactivate() {}
