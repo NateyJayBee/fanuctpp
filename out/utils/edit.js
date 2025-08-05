@@ -125,6 +125,7 @@ function editLineNumbers(document_1) {
                         edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
                     }
                     lineContCnt++;
+                    lineText = lineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, '');
                 }
                 else if (twoSemiEndRegex.test(lineText)) {
                     lineText = tpLineText + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');

@@ -110,6 +110,7 @@ export async function editLineNumbers(document: vscode.TextDocument, asCommand: 
                     edits.push(vscode.TextEdit.replace(new vscode.Range(startLine + i - 1, 0, startLine + i - 1, prevLineLength), prevLineText));
                 }
                 lineContCnt++; 
+                lineText = lineText.replace(/(\s*; ;\s*\s*$|\s*;*\s*$)/, '');
             }
             else if (twoSemiEndRegex.test(lineText)) {
                 lineText = tpLineText + ":" + lineText.slice(5).replace(twoSemiEndRegex, ' ;');
